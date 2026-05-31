@@ -33,6 +33,7 @@ from .tools.document  import (
 )
 
 from .playbooks.base  import Playbook, PlaybookLibrary
+from .mcp             import SmartLawyerMCP, LegalMCPClient
 
 __version__ = "0.1.0"
 __author__  = "SmartLawyer AI"
@@ -58,4 +59,7 @@ __all__ = [
     # Playbooks
     "Playbook",
     "PlaybookLibrary",
+    # MCP
+    "SmartLawyerMCP",
+    "LegalMCPClient",
 ]
