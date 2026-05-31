@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "legalagents"
+version = "0.1.0"
+description = "Legal AI agents framework — extension of smolagents for French law"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.11"
+keywords = ["legal", "ai", "agents", "llm", "jurisprudence", "droit", "smolagents"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Legal Industry",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "smolagents>=1.14",
+    "pyyaml>=6.0",
+    "pdfplumber>=0.11",
+    "python-docx>=1.1",
+    "lxml>=5.0",
+    "diff-match-patch>=20230430",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+    "mypy>=1.9",
+]
+# Optional: async tools that call external services
+async = [
+    "httpx>=0.27",
+    "asyncpg>=0.29",
+]
+
+[project.urls]
+Homepage = "https://github.com/smartlawyer-ai/legalagents"
+Repository = "https://github.com/smartlawyer-ai/legalagents"
+Issues = "https://github.com/smartlawyer-ai/legalagents/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/legalagents"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src" = ""
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
