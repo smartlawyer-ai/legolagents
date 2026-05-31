@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" width="900" height="420">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f1729"/>
+      <stop offset="100%" style="stop-color:#1a2540"/>
+    </linearGradient>
+    <linearGradient id="smol" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD21E"/>
+      <stop offset="100%" style="stop-color:#F0C000"/>
+    </linearGradient>
+    <linearGradient id="brick1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4f8ef7"/>
+      <stop offset="100%" style="stop-color:#2563eb"/>
+    </linearGradient>
+    <linearGradient id="brick2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed"/>
+      <stop offset="100%" style="stop-color:#5b21b6"/>
+    </linearGradient>
+    <linearGradient id="brick3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#059669"/>
+      <stop offset="100%" style="stop-color:#047857"/>
+    </linearGradient>
+    <linearGradient id="scalegold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="420" fill="url(#bg)" rx="16"/>
+
+  <!-- Subtle grid lines -->
+  <g opacity="0.04" stroke="#ffffff" stroke-width="1">
+    <line x1="0" y1="60" x2="900" y2="60"/>
+    <line x1="0" y1="120" x2="900" y2="120"/>
+    <line x1="0" y1="180" x2="900" y2="180"/>
+    <line x1="0" y1="240" x2="900" y2="240"/>
+    <line x1="0" y1="300" x2="900" y2="300"/>
+    <line x1="0" y1="360" x2="900" y2="360"/>
+    <line x1="150" y1="0" x2="150" y2="420"/>
+    <line x1="300" y1="0" x2="300" y2="420"/>
+    <line x1="450" y1="0" x2="450" y2="420"/>
+    <line x1="600" y1="0" x2="600" y2="420"/>
+    <line x1="750" y1="0" x2="750" y2="420"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- LEFT SIDE — Brick stack                            -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <!-- SMOL AGENTS base brick -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="320" width="240" height="56" rx="8" fill="url(#smol)"/>
+    <!-- Lego studs on top -->
+    <circle cx="100" cy="320" r="8" fill="#FFE566" stroke="#E0AC00" stroke-width="1.5"/>
+    <circle cx="140" cy="320" r="8" fill="#FFE566" stroke="#E0AC00" stroke-width="1.5"/>
+    <circle cx="180" cy="320" r="8" fill="#FFE566" stroke="#E0AC00" stroke-width="1.5"/>
+    <circle cx="220" cy="320" r="8" fill="#FFE566" stroke="#E0AC00" stroke-width="1.5"/>
+    <circle cx="260" cy="320" r="8" fill="#FFE566" stroke="#E0AC00" stroke-width="1.5"/>
+    <text x="180" y="354" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', sans-serif" font-size="15" font-weight="700" fill="#1a1a00" letter-spacing="0.5">smolagents</text>
+    <text x="180" y="368" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', sans-serif" font-size="10" fill="#5a4a00" letter-spacing="0.3">HuggingFace • ToolCallingAgent</text>
+  </g>
+
+  <!-- Arrow up -->
+  <g opacity="0.6">
+    <line x1="180" y1="316" x2="180" y2="294" stroke="#4f8ef7" stroke-width="2" stroke-dasharray="4,3"/>
+    <polygon points="180,288 175,298 185,298" fill="#4f8ef7"/>
+    <text x="188" y="308" font-family="'Inter', sans-serif" font-size="9" fill="#4f8ef7" opacity="0.8">étend</text>
+  </g>
+
+  <!-- BRICK 1 — Agents -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="240" width="240" height="52" rx="8" fill="url(#brick1)"/>
+    <circle cx="100" cy="240" r="7" fill="#7aadff" stroke="#2563eb" stroke-width="1.5"/>
+    <circle cx="145" cy="240" r="7" fill="#7aadff" stroke="#2563eb" stroke-width="1.5"/>
+    <circle cx="190" cy="240" r="7" fill="#7aadff" stroke="#2563eb" stroke-width="1.5"/>
+    <circle cx="235" cy="240" r="7" fill="#7aadff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="180" y="268" text-anchor="middle" font-family="'Inter', sans-serif" font-size="13" font-weight="700" fill="#fff">Agents juridiques</text>
+    <text x="180" y="283" text-anchor="middle" font-family="'Inter', sans-serif" font-size="10" fill="#bfdbfe">Research · Fiche · Document</text>
+  </g>
+
+  <!-- BRICK 2 — Tools -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="172" width="240" height="52" rx="8" fill="url(#brick2)"/>
+    <circle cx="100" cy="172" r="7" fill="#c4b5fd" stroke="#5b21b6" stroke-width="1.5"/>
+    <circle cx="145" cy="172" r="7" fill="#c4b5fd" stroke="#5b21b6" stroke-width="1.5"/>
+    <circle cx="190" cy="172" r="7" fill="#c4b5fd" stroke="#5b21b6" stroke-width="1.5"/>
+    <circle cx="235" cy="172" r="7" fill="#c4b5fd" stroke="#5b21b6" stroke-width="1.5"/>
+    <text x="180" y="200" text-anchor="middle" font-family="'Inter', sans-serif" font-size="13" font-weight="700" fill="#fff">Outils abstraits</text>
+    <text x="180" y="215" text-anchor="middle" font-family="'Inter', sans-serif" font-size="10" fill="#ddd6fe">Jurisprudence · Graphe · Articles</text>
+  </g>
+
+  <!-- BRICK 3 — Playbooks -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="104" width="240" height="52" rx="8" fill="url(#brick3)"/>
+    <circle cx="100" cy="104" r="7" fill="#6ee7b7" stroke="#047857" stroke-width="1.5"/>
+    <circle cx="145" cy="104" r="7" fill="#6ee7b7" stroke="#047857" stroke-width="1.5"/>
+    <circle cx="190" cy="104" r="7" fill="#6ee7b7" stroke="#047857" stroke-width="1.5"/>
+    <circle cx="235" cy="104" r="7" fill="#6ee7b7" stroke="#047857" stroke-width="1.5"/>
+    <text x="180" y="132" text-anchor="middle" font-family="'Inter', sans-serif" font-size="13" font-weight="700" fill="#fff">Playbooks + Documents</text>
+    <text x="180" y="147" text-anchor="middle" font-family="'Inter', sans-serif" font-size="10" fill="#a7f3d0">Bail · Contrat · SHA · Crédit</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- CENTER — Scales of justice (golden)                -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <!-- Balance mast -->
+  <line x1="450" y1="100" x2="450" y2="310" stroke="url(#scalegold)" stroke-width="3.5" filter="url(#glow)"/>
+  <!-- Base -->
+  <rect x="422" y="308" width="56" height="10" rx="5" fill="url(#scalegold)" filter="url(#glow)"/>
+  <!-- Top orb -->
+  <circle cx="450" cy="96" r="10" fill="url(#scalegold)" filter="url(#glow)"/>
+
+  <!-- Cross beam -->
+  <line x1="330" y1="165" x2="570" y2="165" stroke="url(#scalegold)" stroke-width="3" filter="url(#glow)"/>
+
+  <!-- Left pan chain -->
+  <line x1="340" y1="165" x2="340" y2="215" stroke="url(#scalegold)" stroke-width="1.8" opacity="0.8"/>
+  <line x1="355" y1="165" x2="355" y2="215" stroke="url(#scalegold)" stroke-width="1.8" opacity="0.8"/>
+  <!-- Left pan -->
+  <path d="M 318 215 Q 347 232 376 215" stroke="url(#scalegold)" stroke-width="2.5" fill="none" filter="url(#glow)"/>
+  <!-- Left pan content -->
+  <text x="347" y="228" text-anchor="middle" font-family="'Georgia', serif" font-size="18">⚖</text>
+
+  <!-- Right pan chain -->
+  <line x1="545" y1="165" x2="545" y2="215" stroke="url(#scalegold)" stroke-width="1.8" opacity="0.8"/>
+  <line x1="560" y1="165" x2="560" y2="215" stroke="url(#scalegold)" stroke-width="1.8" opacity="0.8"/>
+  <!-- Right pan -->
+  <path d="M 524 215 Q 553 232 582 215" stroke="url(#scalegold)" stroke-width="2.5" fill="none" filter="url(#glow)"/>
+  <!-- Right pan content -->
+  <text x="553" y="228" text-anchor="middle" font-family="'Georgia', serif" font-size="18">🤖</text>
+
+  <!-- Decorative stars -->
+  <text x="450" y="78" text-anchor="middle" font-size="16" opacity="0.6">✦</text>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- RIGHT SIDE — Title and tagline                     -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <text x="630" y="155" text-anchor="middle"
+    font-family="'Inter', 'Helvetica Neue', sans-serif"
+    font-size="48" font-weight="900" fill="#ffffff"
+    letter-spacing="-1" filter="url(#glow)">lego</text>
+
+  <text x="630" y="205" text-anchor="middle"
+    font-family="'Inter', 'Helvetica Neue', sans-serif"
+    font-size="48" font-weight="900"
+    fill="url(#scalegold)"
+    letter-spacing="-1" filter="url(#glow)">agents</text>
+
+  <!-- Separator line -->
+  <line x1="520" y1="220" x2="740" y2="220" stroke="#4f8ef7" stroke-width="1.5" opacity="0.5"/>
+
+  <text x="630" y="246" text-anchor="middle"
+    font-family="'Inter', sans-serif"
+    font-size="14" fill="#94a3b8" letter-spacing="0.8">extension de smolagents</text>
+
+  <text x="630" y="268" text-anchor="middle"
+    font-family="'Inter', sans-serif"
+    font-size="14" fill="#94a3b8" letter-spacing="0.8">pour le droit français</text>
+
+  <!-- Feature chips -->
+  <g font-family="'Inter', sans-serif" font-size="11" font-weight="600">
+    <!-- Chip 1 -->
+    <rect x="518" y="290" width="90" height="22" rx="11" fill="#1e3a5f" stroke="#4f8ef7" stroke-width="1"/>
+    <text x="563" y="305" text-anchor="middle" fill="#93c5fd">Agents FR</text>
+
+    <!-- Chip 2 -->
+    <rect x="618" y="290" width="90" height="22" rx="11" fill="#2d1b69" stroke="#7c3aed" stroke-width="1"/>
+    <text x="663" y="305" text-anchor="middle" fill="#c4b5fd">Playbooks</text>
+
+    <!-- Chip 3 -->
+    <rect x="518" y="320" width="90" height="22" rx="11" fill="#064e3b" stroke="#059669" stroke-width="1"/>
+    <text x="563" y="335" text-anchor="middle" fill="#6ee7b7">Docs DOCX</text>
+
+    <!-- Chip 4 -->
+    <rect x="618" y="320" width="90" height="22" rx="11" fill="#1a1a2e" stroke="#fbbf24" stroke-width="1"/>
+    <text x="663" y="335" text-anchor="middle" fill="#fbbf24">MCP ready</text>
+  </g>
+
+  <!-- Bottom badge -->
+  <rect x="540" y="358" width="180" height="28" rx="14" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text x="630" y="376" text-anchor="middle"
+    font-family="'Inter', sans-serif" font-size="11" fill="#64748b">
+    pip install legolagents
+  </text>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- French flag subtle accent (top right corner)       -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <rect x="866" y="0" width="12" height="420" fill="#ED2939" opacity="0.7" rx="0"/>
+  <rect x="854" y="0" width="12" height="420" fill="#ffffff" opacity="0.15" rx="0"/>
+  <rect x="842" y="0" width="12" height="420" fill="#002395" opacity="0.7" rx="0"/>
+
+  <!-- Round corners clip -->
+  <rect x="0" y="0" width="900" height="420" fill="none" stroke="none" rx="16"/>
+</svg>
