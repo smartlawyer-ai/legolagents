@@ -5,11 +5,11 @@ build-backend = "hatchling.build"
 [project]
 name = "legolagents"
 version = "0.1.0"
-description = "Legal AI agents framework — extension of smolagents for French law"
+description = "Legal AI agents framework — extension of smolagents with structured, jurisdiction-agnostic legal reasoning (French law example included)"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
-keywords = ["legal", "ai", "agents", "llm", "jurisprudence", "droit", "smolagents"]
+keywords = ["legal", "ai", "agents", "llm", "jurisprudence", "legaltech", "smolagents"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Legal Industry",

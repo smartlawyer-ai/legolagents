@@ -1,6 +1,11 @@
 """
-legolagents — Extension smolagents pour le droit français
-══════════════════════════════════════════════════════════
+legolagents — Extension smolagents pour construire des agents juridiques
+═════════════════════════════════════════════════════════════════════════
+
+Raisonnement juridique structuré (qualification, validité temporelle,
+hiérarchie jurisprudentielle, traversal du graphe de citations…), agnostique
+de juridiction par défaut — précisez `jurisdiction` / `legal_domain` pour
+l'ancrer dans un droit donné.
 
 Usage minimal :
 
@@ -8,13 +13,15 @@ Usage minimal :
     from legolagents.tools.retrieval import JurisprudenceSearchTool
     from smolagents import OpenAIServerModel
 
-    # Implémenter un tool concret (ou utiliser les tools SmartLawyer)
+    # Implémenter un tool concret (ou utiliser les tools SmartLawyer, cf. README)
     class MySearchTool(JurisprudenceSearchTool):
         def forward(self, query, domaine="", limit=5):
             ...
 
     model = OpenAIServerModel(model_id="gpt-4o", api_key="...")
-    agent = LegalResearchAgent(tools=[MySearchTool()], model=model)
+    agent = LegalResearchAgent(
+        tools=[MySearchTool()], model=model, jurisdiction="France",
+    )
     result = agent.run("Quelle est la jurisprudence sur le barème Macron ?")
 """
 
