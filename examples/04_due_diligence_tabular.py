@@ -7,13 +7,13 @@ avant une acquisition immobilière. Rapport Word en sortie.
 """
 
 from pathlib import Path
-from legalagents import LegalDocumentAgent
-from legalagents.tools.document import GenerateDocxTool, TabularAnalysisTool
-from legalagents.playbooks import PlaybookLibrary
+from legolagents import LegalDocumentAgent
+from legolagents.tools.document import GenerateDocxTool, TabularAnalysisTool
+from legolagents.playbooks import PlaybookLibrary
 from smolagents import LiteLLMModel
 
 model    = LiteLLMModel(model_id="anthropic/claude-sonnet-4-5")
-WORK_DIR = Path("/tmp/legalagents_demo")
+WORK_DIR = Path("/tmp/legolagents_demo")
 WORK_DIR.mkdir(exist_ok=True)
 
 

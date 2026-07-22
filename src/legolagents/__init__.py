@@ -1,11 +1,11 @@
 """
-legalagents — Extension smolagents pour le droit français
+legolagents — Extension smolagents pour le droit français
 ══════════════════════════════════════════════════════════
 
 Usage minimal :
 
-    from legalagents import LegalResearchAgent
-    from legalagents.tools.retrieval import JurisprudenceSearchTool
+    from legolagents import LegalResearchAgent
+    from legolagents.tools.retrieval import JurisprudenceSearchTool
     from smolagents import OpenAIServerModel
 
     # Implémenter un tool concret (ou utiliser les tools SmartLawyer)

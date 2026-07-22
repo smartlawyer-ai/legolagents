@@ -1,15 +1,15 @@
 """
-legalagents.mcp
+legolagents.mcp
 ───────────────
-Intégration MCP pour legalagents.
+Intégration MCP pour legolagents.
 
 Permet de brancher n'importe quel serveur MCP juridique sur les agents
-legalagents, notamment le Legal Graph SmartLawyer (13 tools).
+legolagents, notamment le Legal Graph SmartLawyer (13 tools).
 
 Usage le plus simple — SmartLawyer MCP :
 
-    from legalagents import LegalResearchAgent
-    from legalagents.mcp import SmartLawyerMCP
+    from legolagents import LegalResearchAgent
+    from legolagents.mcp import SmartLawyerMCP
     from smolagents import OpenAIServerModel
 
     model = OpenAIServerModel(model_id="claude-sonnet-4-5", api_base="...")
@@ -21,13 +21,13 @@ Usage le plus simple — SmartLawyer MCP :
 
 Usage avec n'importe quel serveur MCP juridique :
 
-    from legalagents.mcp import LegalMCPClient
+    from legolagents.mcp import LegalMCPClient
 
     with LegalMCPClient(url="https://mon-mcp-juridique.fr/mcp") as tools:
         agent = LegalResearchAgent(tools=tools, model=model)
         ...
 
-Les tools MCP sont utilisés tels quels par smolagents — legalagents
+Les tools MCP sont utilisés tels quels par smolagents — legolagents
 apporte uniquement la stratégie de raisonnement (system prompt, planning).
 """
 
@@ -97,8 +97,8 @@ class SmartLawyerMCP(LegalMCPClient):
 
     Example
     -------
-    >>> from legalagents import LegalResearchAgent
-    >>> from legalagents.mcp import SmartLawyerMCP
+    >>> from legolagents import LegalResearchAgent
+    >>> from legolagents.mcp import SmartLawyerMCP
     >>> from smolagents import LiteLLMModel
     >>>
     >>> model = LiteLLMModel(model_id="anthropic/claude-sonnet-4-5")

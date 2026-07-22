@@ -1,5 +1,5 @@
 """
-legalagents.agents.document
+legolagents.agents.document
 ────────────────────────────
 LegalDocumentAgent — agent de traitement documentaire.
 

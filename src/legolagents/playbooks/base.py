@@ -1,5 +1,5 @@
 """
-legalagents.playbooks.base
+legolagents.playbooks.base
 ───────────────────────────
 Playbook — template de workflow juridique structuré.
 

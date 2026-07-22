@@ -1,5 +1,5 @@
 """
-legalagents.tools.graph
+legolagents.tools.graph
 ───────────────────────
 Tools abstraits de navigation dans le Legal Graph.
 

@@ -1,10 +1,10 @@
 """
-legalagents.agents.base
+legolagents.agents.base
 ───────────────────────
 LegalAgent — extension de ToolCallingAgent avec stratégie de raisonnement FR.
 
 Usage :
-    from legalagents import LegalAgent
+    from legolagents import LegalAgent
 
     agent = LegalAgent(
         tools=[SearchJurisprudencesTool(), GetLegalGraphTool()],

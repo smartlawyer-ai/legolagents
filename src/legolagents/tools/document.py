@@ -1,5 +1,5 @@
 """
-legalagents.tools.document
+legolagents.tools.document
 ──────────────────────────
 Tools de traitement documentaire — réécriture Python des capacités de mike.
 

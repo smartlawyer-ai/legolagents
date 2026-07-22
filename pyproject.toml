@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "legalagents"
+name = "legolagents"
 version = "0.1.0"
 description = "Legal AI agents framework — extension of smolagents for French law"
 readme = "README.md"
@@ -41,12 +41,12 @@ async = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/smartlawyer-ai/legalagents"
-Repository = "https://github.com/smartlawyer-ai/legalagents"
-Issues = "https://github.com/smartlawyer-ai/legalagents/issues"
+Homepage = "https://github.com/smartlawyer-ai/legolagents"
+Repository = "https://github.com/smartlawyer-ai/legolagents"
+Issues = "https://github.com/smartlawyer-ai/legolagents/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/legalagents"]
+packages = ["src/legolagents"]
 
 [tool.hatch.build.targets.wheel.sources]
 "src" = ""

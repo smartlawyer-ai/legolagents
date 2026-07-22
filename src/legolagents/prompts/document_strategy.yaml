@@ -53,14 +53,12 @@ planning:
     2. Identifier les clauses / points clés
     3. Effectuer les modifications ou générations demandées
     4. Vérifier le résultat
-
-    Étapes : {{remaining_steps}}
   update_facts_pre_messages: |-
     État de la tâche documentaire.
   update_facts_post_messages: |-
     Consolide ce qui a été fait et ce qui reste.
   update_plan_pre_messages: |-
-    Étape {{step_number}}/{{max_steps}}.
+    Mise à jour du plan documentaire.
   update_plan_post_messages: |-
     Étapes restantes : {{remaining_steps}}.
 

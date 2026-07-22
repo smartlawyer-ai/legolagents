@@ -1,5 +1,5 @@
 """
-legalagents.agents.research
+legolagents.agents.research
 ────────────────────────────
 LegalResearchAgent — agent de recherche jurisprudentielle.
 

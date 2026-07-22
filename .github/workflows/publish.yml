@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/legalagents
+      url: https://pypi.org/p/legolagents
     permissions:
       id-token: write  # requis pour le Trusted Publishing (OIDC), aucun secret à stocker
     steps:
