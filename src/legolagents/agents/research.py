@@ -1,5 +1,5 @@
 """
-legalagents.agents.research
+legolagents.agents.research
 ────────────────────────────
 LegalResearchAgent — agent de recherche jurisprudentielle.
 
@@ -38,6 +38,8 @@ class LegalResearchAgent(LegalAgent):
         Doit inclure : JurisprudenceSearchTool, FindLandmarkCasesTool,
         CheckDecisionValidityTool, GetLegalGraphTool, GetArticleTool.
     model : smolagents.Model
+    jurisdiction : str
+        Juridiction de référence (ex: "France"), transmise à LegalAgent.
     legal_domain : str
         Domaine juridique (restreint les recherches si fourni)
     depth : str

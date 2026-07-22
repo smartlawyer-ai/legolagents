@@ -12,3 +12,5 @@ venv/
 .ruff_cache/
 htmlcov/
 .coverage
+.DS_Store
+*.DS_Store

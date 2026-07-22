@@ -47,14 +47,12 @@ planning:
     1. Vérifier la validité (superseded ?)
     2. Situer dans le Legal Graph
     3. Répondre à la question posée avec les outils appropriés
-
-    Étapes : {{remaining_steps}}
   update_facts_pre_messages: |-
     Analyse en cours.
   update_facts_post_messages: |-
     Points établis et questions restantes.
   update_plan_pre_messages: |-
-    Étape {{step_number}}/{{max_steps}}.
+    Mise à jour du plan d'analyse.
   update_plan_post_messages: |-
     Étapes restantes : {{remaining_steps}}.
 

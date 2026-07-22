@@ -71,14 +71,12 @@ planning:
     2. Ordre des recherches (landmarks d'abord, puis détail)
     3. Arrêts à vérifier impérativement (validité temporelle)
     4. Textes légaux à croiser
-
-    Nombre d'étapes disponibles : {{remaining_steps}}
   update_facts_pre_messages: |-
     Voici l'avancement de la recherche juridique.
   update_facts_post_messages: |-
     Mets à jour ta connaissance des faits établis et des points encore incertains.
   update_plan_pre_messages: |-
-    Étape {{step_number}}/{{max_steps}}. Révise le plan si nécessaire.
+    Mise à jour du plan de recherche juridique.
   update_plan_post_messages: |-
     Plan mis à jour. Étapes restantes : {{remaining_steps}}.
 

@@ -1,5 +1,5 @@
 """
-legalagents.agents.fiche
+legolagents.agents.fiche
 ────────────────────────
 FicheAnalystAgent — agent d'analyse d'une décision de justice.
 

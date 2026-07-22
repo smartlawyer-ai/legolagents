@@ -11,13 +11,13 @@ Optionnel : brancher le MCP pour que l'agent cite la jurisprudence.
 
 import os
 from pathlib import Path
-from legalagents import LegalDocumentAgent
-from legalagents.mcp import SmartLawyerMCP
-from legalagents.tools.document import GenerateDocxTool, TrackedChangesTool
+from legolagents import LegalDocumentAgent
+from legolagents.mcp import SmartLawyerMCP
+from legolagents.tools.document import GenerateDocxTool, TrackedChangesTool
 from smolagents import LiteLLMModel
 
 model = LiteLLMModel(model_id="anthropic/claude-sonnet-4-5")
-WORK_DIR = Path("/tmp/legalagents_demo")
+WORK_DIR = Path("/tmp/legolagents_demo")
 WORK_DIR.mkdir(exist_ok=True)
 
 
@@ -84,7 +84,7 @@ API_KEY = os.environ.get("SMARTLAWYER_API_KEY", "")
 
 if API_KEY:
     with SmartLawyerMCP(api_key=API_KEY) as legal_tools:
-        from legalagents.agents.document import _default_document_tools
+        from legolagents.agents.document import _default_document_tools
         agent_review = LegalDocumentAgent(
             tools        = _default_document_tools() + list(legal_tools),
             model        = model,

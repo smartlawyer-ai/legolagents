@@ -8,15 +8,15 @@ Le chemin le plus court pour un agent juridique expert :
   - Stratégie de raisonnement FR baked in
 
 Prérequis :
-  pip install legalagents smolagents
+  pip install legolagents smolagents
   pip install 'smolagents[mcp]'   # support MCP
 
 Clé API SmartLawyer : https://smartlawyer.ai → Paramètres → Clés API
 """
 
 import os
-from legalagents import LegalResearchAgent
-from legalagents.mcp import SmartLawyerMCP
+from legolagents import LegalResearchAgent
+from legolagents.mcp import SmartLawyerMCP
 from smolagents import LiteLLMModel   # ou OpenAIServerModel, AnthropicModel…
 
 API_KEY = os.environ.get("SMARTLAWYER_API_KEY", "sk-sl-votre-cle")

@@ -10,8 +10,8 @@ des questions sur la portée, la validité, les liens de l'arrêt.
 """
 
 import os
-from legalagents import FicheAnalystAgent
-from legalagents.mcp import SmartLawyerMCP
+from legolagents import FicheAnalystAgent
+from legolagents.mcp import SmartLawyerMCP
 from smolagents import LiteLLMModel
 
 API_KEY = os.environ.get("SMARTLAWYER_API_KEY", "sk-sl-votre-cle")

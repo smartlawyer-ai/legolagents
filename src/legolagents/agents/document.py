@@ -1,5 +1,5 @@
 """
-legalagents.agents.document
+legolagents.agents.document
 ────────────────────────────
 LegalDocumentAgent — agent de traitement documentaire.
 
@@ -53,6 +53,8 @@ class LegalDocumentAgent(LegalAgent):
     model : smolagents.Model
     document_paths : list[str] | None
         Chemins des documents à traiter (injectés dans le contexte initial).
+    jurisdiction : str
+        Juridiction de référence (ex: "France"), transmise à LegalAgent.
     legal_domain : str
         Domaine juridique — guide les analyses de conformité.
     """

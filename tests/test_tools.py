@@ -1,5 +1,5 @@
 """
-Tests — legalagents.tools
+Tests — legolagents.tools
 """
 
 import io
@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from legalagents.tools.base import Certainty, LegalCitation, LegalTool
-from legalagents.tools.articles import normalize_code_name
-from legalagents.tools.document import (
+from legolagents.tools.base import Certainty, LegalCitation, LegalTool
+from legolagents.tools.articles import normalize_code_name
+from legolagents.tools.document import (
     EditInput,
     GenerateDocxTool,
     ReadDocumentTool,

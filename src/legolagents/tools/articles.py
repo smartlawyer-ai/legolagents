@@ -1,5 +1,5 @@
 """
-legalagents.tools.articles
+legolagents.tools.articles
 ──────────────────────────
 Tools abstraits pour les articles de loi.
 

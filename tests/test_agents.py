@@ -1,15 +1,15 @@
 """
-Tests — legalagents.agents
+Tests — legolagents.agents
 """
 
 import pytest
 
-from legalagents.agents.base import LegalAgent, _build_prompt_templates
-from legalagents.tools.base import LegalTool
-from legalagents.agents.fiche import FicheAnalystAgent, _build_fiche_context
-from legalagents.agents.research import LegalResearchAgent
-from legalagents.agents.document import LegalDocumentAgent
-from legalagents.prompts import get_system_prompt, load_prompt
+from legolagents.agents.base import LegalAgent, _build_prompt_templates
+from legolagents.tools.base import LegalTool
+from legolagents.agents.fiche import FicheAnalystAgent, _build_fiche_context
+from legolagents.agents.research import LegalResearchAgent
+from legolagents.agents.document import LegalDocumentAgent
+from legolagents.prompts import get_system_prompt, load_prompt
 
 
 # ── Prompts YAML ──────────────────────────────────────────────────────────────
@@ -146,7 +146,7 @@ class TestAgentConstruction:
 
     def test_document_agent_default_tools(self):
         """LegalDocumentAgent doit avoir 4 tools par défaut sans argument."""
-        from legalagents.agents.document import _default_document_tools
+        from legolagents.agents.document import _default_document_tools
         tools = _default_document_tools()
         assert len(tools) == 4
         names = {t.name for t in tools}
@@ -160,7 +160,7 @@ class TestAgentConstruction:
 
 class TestPlaybooks:
     def test_all_playbooks_registered(self):
-        from legalagents.playbooks import PlaybookLibrary
+        from legolagents.playbooks import PlaybookLibrary
         ids = PlaybookLibrary.list()
         assert "bail_commercial"   in ids
         assert "contrat_travail"   in ids
@@ -168,7 +168,7 @@ class TestPlaybooks:
         assert "convention_credit" in ids
 
     def test_bail_commercial_points(self):
-        from legalagents.playbooks import PlaybookLibrary
+        from legolagents.playbooks import PlaybookLibrary
         pb = PlaybookLibrary.get("bail_commercial")
         assert pb is not None
         assert len(pb.points) == 14
@@ -177,7 +177,7 @@ class TestPlaybooks:
         assert "L145" in prompt
 
     def test_contrat_travail_non_concurrence(self):
-        from legalagents.playbooks import PlaybookLibrary
+        from legolagents.playbooks import PlaybookLibrary
         pb = PlaybookLibrary.get("contrat_travail")
         prompt = pb.to_prompt()
         # Jurisprudence Soc. 2002 sur la non-concurrence doit être mentionnée
@@ -185,14 +185,14 @@ class TestPlaybooks:
         assert "non-concurrence" in prompt.lower() or "non concurrence" in prompt.lower()
 
     def test_pacte_associes_has_drag_tag(self):
-        from legalagents.playbooks import PlaybookLibrary
+        from legolagents.playbooks import PlaybookLibrary
         pb = PlaybookLibrary.get("pacte_associes")
         prompt = pb.to_prompt()
         assert "drag" in prompt.lower()
         assert "tag" in prompt.lower()
 
     def test_playbook_to_prompt_output_path(self):
-        from legalagents.playbooks import PlaybookLibrary
+        from legolagents.playbooks import PlaybookLibrary
         pb = PlaybookLibrary.get("convention_credit")
         prompt_inline = pb.to_prompt()
         prompt_docx   = pb.to_prompt(output_path="/tmp/test.docx")
@@ -201,7 +201,7 @@ class TestPlaybooks:
         assert "/tmp/test.docx" in prompt_docx
 
     def test_custom_playbook_registration(self):
-        from legalagents.playbooks.base import Playbook, PlaybookLibrary, PlaybookPoint
+        from legolagents.playbooks.base import Playbook, PlaybookLibrary, PlaybookPoint
         pb = Playbook(
             id="test_custom", title="Test", document_type="test",
             points=[PlaybookPoint(1, "Point test", "Description test")],
@@ -210,7 +210,7 @@ class TestPlaybooks:
         assert PlaybookLibrary.get("test_custom") is pb
 
     def test_flag_conditions_in_prompt(self):
-        from legalagents.playbooks import PlaybookLibrary
+        from legolagents.playbooks import PlaybookLibrary
         pb = PlaybookLibrary.get("bail_commercial")
         prompt = pb.to_prompt()
         # Les conditions de signalement doivent apparaître

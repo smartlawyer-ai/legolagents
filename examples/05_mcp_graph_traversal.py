@@ -13,8 +13,8 @@ Démontre les 4 use cases différenciants du Legal Graph :
 """
 
 import os
-from legalagents import LegalResearchAgent, FicheAnalystAgent
-from legalagents.mcp import SmartLawyerMCP
+from legolagents import LegalResearchAgent, FicheAnalystAgent
+from legolagents.mcp import SmartLawyerMCP
 from smolagents import LiteLLMModel
 
 API_KEY = os.environ.get("SMARTLAWYER_API_KEY", "sk-sl-votre-cle")

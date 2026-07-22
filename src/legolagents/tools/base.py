@@ -1,5 +1,5 @@
 """
-legalagents.tools.base
+legolagents.tools.base
 ─────────────────────
 LegalTool — base class pour tous les tools juridiques.
 
@@ -144,18 +144,34 @@ class LegalTool(Tool):
         Exécute une coroutine depuis forward() (contexte synchrone).
 
         Détecte si une event loop tourne déjà (FastAPI, Chainlit) et
-        utilise un thread isolé pour éviter les conflits. Évite le
-        anti-pattern ThreadPoolExecutor+asyncio.run imbriqué du code
-        original de SmartLawyer.
+        utilise un thread isolé pour éviter les conflits.
+
+        IMPORTANT : la coroutine doit être créée DANS le thread pour éviter
+        les Future cross-loop. On passe donc soit une coroutine (cas sans loop),
+        soit on la wrape dans asyncio.run directement.
         """
         try:
             asyncio.get_running_loop()
             # Event loop active → thread séparé avec sa propre loop
+            # On wrappe dans une fonction pour que la coroutine soit
+            # entièrement exécutée dans le contexte du nouveau thread
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
-                return ex.submit(asyncio.run, coro).result(timeout=self.async_timeout)
+                fut = ex.submit(self._run_in_new_loop, coro)
+                return fut.result(timeout=self.async_timeout)
         except RuntimeError:
             # Pas de loop active → on peut lancer directement
             return asyncio.run(coro)
+
+    @staticmethod
+    def _run_in_new_loop(coro: Coroutine) -> Any:
+        """Crée une loop propre et exécute la coroutine dedans."""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(coro)
+        finally:
+            loop.close()
+            asyncio.set_event_loop(None)
 
     # ── Validation ─────────────────────────────────────────────────────────────
 

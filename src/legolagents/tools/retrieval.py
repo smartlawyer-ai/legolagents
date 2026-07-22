@@ -1,5 +1,5 @@
 """
-legalagents.tools.retrieval
+legolagents.tools.retrieval
 ───────────────────────────
 Tools abstraits de recherche jurisprudentielle.
 
@@ -9,7 +9,7 @@ sont fournies par le projet consommateur (ex: SmartLawyer).
 
 Exemple d'implémentation :
 
-    from legalagents.tools.retrieval import JurisprudenceSearchTool
+    from legolagents.tools.retrieval import JurisprudenceSearchTool
 
     class QdrantJurisprudenceSearchTool(JurisprudenceSearchTool):
         def __init__(self, client, embed_fn):

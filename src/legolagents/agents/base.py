@@ -1,17 +1,25 @@
 """
-legalagents.agents.base
+legolagents.agents.base
 ───────────────────────
-LegalAgent — extension de ToolCallingAgent avec stratégie de raisonnement FR.
+LegalAgent — extension de ToolCallingAgent avec une stratégie de raisonnement
+juridique structurée, agnostique de juridiction par défaut.
 
 Usage :
-    from legalagents import LegalAgent
+    from legolagents import LegalAgent
 
     agent = LegalAgent(
         tools=[SearchJurisprudencesTool(), GetLegalGraphTool()],
         model=model,
+        jurisdiction="France",
         legal_domain="droit social",
     )
     result = agent.run("Quelle est la jurisprudence sur le barème Macron ?")
+
+Le raisonnement (protocole de qualification, validité temporelle, hiérarchie
+jurisprudentielle, traversal du graphe…) est le même quelle que soit la
+juridiction. Précisez `jurisdiction` et/ou `legal_domain` pour ancrer les
+réponses dans un droit donné, ou fournissez un `prompt_yaml` sur mesure pour
+un préréglage spécifique (ex : "base_legal_fr" pour le droit français).
 """
 
 from __future__ import annotations
@@ -49,13 +57,19 @@ def _build_prompt_templates(yaml_name: str, extra_context: str = "") -> dict:
 
 class LegalAgent(ToolCallingAgent):
     """
-    Agent juridique expert en droit français.
+    Agent juridique expert, avec un raisonnement structuré agnostique de
+    juridiction par défaut (qualification, validité temporelle, hiérarchie
+    jurisprudentielle, traversal du graphe, fondement textuel…).
 
     Étend ToolCallingAgent avec :
     - Stratégie de raisonnement juridique baked in (YAML)
     - planning_interval=2 : re-planification toutes les 2 étapes
     - max_steps=10 : adapté à la complexité d'une recherche juridique
-    - Attributs legal_domain et jurisdiction pour les outils
+    - Attributs jurisdiction et legal_domain pour ancrer les réponses
+
+    Pour un droit donné (ex : France), passez `jurisdiction="France"` et/ou
+    un `prompt_yaml` sur mesure (ex : "base_legal_fr", inclus comme
+    préréglage prêt à l'emploi pour le droit français).
 
     Parameters
     ----------
@@ -64,6 +78,9 @@ class LegalAgent(ToolCallingAgent):
         (ex: QdrantJurisprudenceSearchTool, QdrantGraphTool…)
     model : smolagents.Model
         Modèle LLM (OpenAIServerModel, LiteLLMModel, AnthropicModel…)
+    jurisdiction : str
+        Juridiction de référence (ex: "France", "Belgique", "Québec").
+        Injectée dans la tâche pour ancrer le raisonnement.
     legal_domain : str
         Domaine juridique principal (ex: "droit social", "droit civil")
     extra_context : str
@@ -71,7 +88,7 @@ class LegalAgent(ToolCallingAgent):
         (ex: contexte d'une fiche, situation du client)
     prompt_yaml : str
         Nom du fichier YAML de stratégie (sans extension)
-        Défaut : "base_legal_fr"
+        Défaut : "base_legal" (générique, agnostique de juridiction)
     max_steps : int
         Nombre maximum d'étapes (défaut : 10)
     planning_interval : int | None
@@ -82,13 +99,15 @@ class LegalAgent(ToolCallingAgent):
         self,
         tools: list[Tool],
         model: Any,
+        jurisdiction: str = "",
         legal_domain: str = "",
         extra_context: str = "",
-        prompt_yaml: str = "base_legal_fr",
+        prompt_yaml: str = "base_legal",
         max_steps: int = 10,
         planning_interval: Optional[int] = 2,
         **kwargs: Any,
     ) -> None:
+        self.jurisdiction = jurisdiction
         self.legal_domain = legal_domain
 
         prompt_templates = _build_prompt_templates(prompt_yaml, extra_context)
@@ -106,9 +125,14 @@ class LegalAgent(ToolCallingAgent):
         """
         Lance l'agent sur une tâche.
 
-        Injecte automatiquement le domaine juridique dans la tâche
-        si legal_domain est défini et non mentionné dans la tâche.
+        Injecte automatiquement la juridiction et le domaine juridique dans
+        la tâche si définis et non déjà mentionnés dans la tâche.
         """
+        tags = []
+        if self.jurisdiction and self.jurisdiction.lower() not in task.lower():
+            tags.append(f"Juridiction : {self.jurisdiction}")
         if self.legal_domain and self.legal_domain.lower() not in task.lower():
-            task = f"[Domaine : {self.legal_domain}]\n\n{task}"
+            tags.append(f"Domaine : {self.legal_domain}")
+        if tags:
+            task = f"[{' | '.join(tags)}]\n\n{task}"
         return super().run(task, **kwargs)
