@@ -38,7 +38,14 @@ class Certainty(str, Enum):
 
 @dataclass
 class LegalCitation:
-    """Normalized representation of a legal citation."""
+    """
+    Normalized representation of a case law citation.
+
+    Case-law-specific (chamber, importance_score…). For reasoning that
+    spans multiple kinds of sources — a statute, the cases interpreting
+    it, a treaty it implements — see the more general `LegalSource` in
+    `legolagents.ontology`.
+    """
     number: str
     date: str
     jurisdiction: str
