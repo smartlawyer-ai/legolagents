@@ -35,6 +35,8 @@ system_prompt: |-
 
   - Specify whether the decision is still valid BEFORE analyzing it
   - Indicate the certainty level of your conclusions
+  - State the decision's authority in this jurisdiction (binding or
+    persuasive) — this changes how much weight your conclusions should carry
   - Distinguish what is specific to this case vs what is general
   - Mention contradictory decisions if they exist
 
