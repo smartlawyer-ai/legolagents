@@ -6,7 +6,22 @@ Structured legal reasoning (qualification, temporal validity, case law
 hierarchy, citation graph traversal…), jurisdiction-agnostic by default —
 set `jurisdiction` / `legal_domain` to ground it in a given legal system.
 
-Minimal usage:
+The core pattern: any jurisdiction's legal sources — codified or not — are
+described with a universal ontology (SourceType × Authority), not a
+France-shaped "code vs. jurisprudence" assumption:
+
+    from legolagents import SourceType, Authority, LegalSource
+
+    statute = LegalSource(ref="L1235-3", type=SourceType.STATUTE, authority=Authority.BINDING)
+    case    = LegalSource(ref="21-14.027", type=SourceType.CASE_LAW, authority=Authority.PERSUASIVE)
+    case.relates_to(statute, how="interprets")
+
+In a common law jurisdiction, the same case would simply carry
+`authority=Authority.BINDING` instead — nothing else changes. See
+`legolagents.ontology` for the full model (SourceType, Authority,
+RelationType).
+
+Minimal agent usage:
 
     from legolagents import LegalResearchAgent
     from legolagents.tools.retrieval import JurisprudenceSearchTool
@@ -29,6 +44,7 @@ from .agents.research import LegalResearchAgent
 from .agents.fiche    import FicheAnalystAgent
 from .agents.document import LegalDocumentAgent
 
+from .ontology        import SourceType, Authority, RelationType, LegalRelation, LegalSource
 from .tools.base      import LegalTool, Certainty, LegalCitation, LegalToolResult
 from .tools.document  import (
     ReadDocumentTool,
@@ -51,6 +67,12 @@ __all__ = [
     "LegalResearchAgent",
     "FicheAnalystAgent",
     "LegalDocumentAgent",
+    # Ontology (universal legal source model)
+    "SourceType",
+    "Authority",
+    "RelationType",
+    "LegalRelation",
+    "LegalSource",
     # Tools base
     "LegalTool",
     "Certainty",
