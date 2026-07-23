@@ -1,16 +1,16 @@
 """
 legolagents.playbooks.base
 ───────────────────────────
-Playbook — template de workflow juridique structuré.
+Playbook — structured legal workflow template.
 
-Un Playbook est un prompt d'instruction pour un agent documentaire.
-Il définit les points précis à extraire ou rédiger pour un type de document donné.
+A Playbook is an instruction prompt for a document agent. It defines the
+precise points to extract or draft for a given document type.
 
-Inspiré des builtinWorkflows de mike — réécrit avec :
-  - Structure Python (pas des strings dans un array)
-  - Droit français (pas Common Law anglophone)
-  - Points d'extraction précis et actionnables
-  - Support inline + DOCX selon la demande
+Inspired by mike's builtinWorkflows — rewritten with:
+  - Python structure (not strings in an array)
+  - Jurisdiction-agnostic core (bring your own legal content per playbook)
+  - Precise, actionable extraction points
+  - Inline + DOCX support depending on the request
 """
 
 from __future__ import annotations
@@ -21,32 +21,32 @@ from typing import Optional
 
 @dataclass
 class PlaybookPoint:
-    """Un point d'extraction ou d'analyse dans un playbook."""
+    """An extraction or analysis point within a playbook."""
     number: int
     label: str
     description: str
-    flag_conditions: list[str] = field(default_factory=list)  # Conditions de signalement ⚠️
+    flag_conditions: list[str] = field(default_factory=list)  # Flagging conditions ⚠️
 
 
 @dataclass
 class Playbook:
     """
-    Template de workflow pour un type de document juridique.
+    Workflow template for a type of legal document.
 
     Attributes
     ----------
     id : str
-        Identifiant unique (ex: "bail_commercial")
+        Unique identifier (e.g. "bail_commercial")
     title : str
-        Titre affiché (ex: "Analyse de Bail Commercial")
+        Displayed title (e.g. "Commercial Lease Analysis")
     document_type : str
-        Type de document ciblé
+        Targeted document type
     points : list[PlaybookPoint]
-        Points d'analyse à couvrir
+        Analysis points to cover
     output_format : str
-        "inline" (réponse chat) | "docx" (document Word) | "both"
+        "inline" (chat answer) | "docx" (Word document) | "both"
     instructions : str
-        Instructions supplémentaires pour l'agent
+        Extra instructions for the agent
     """
     id: str
     title: str
@@ -58,31 +58,31 @@ class Playbook:
 
     def to_prompt(self, output_path: Optional[str] = None) -> str:
         """
-        Génère le prompt d'instruction pour l'agent à partir du playbook.
+        Generate the instruction prompt for the agent from the playbook.
         """
         points_text = "\n".join(
             f"{p.number}. **{p.label}** — {p.description}"
-            + (f"\n   ⚠️ Signaler si : {', '.join(p.flag_conditions)}" if p.flag_conditions else "")
+            + (f"\n   ⚠️ Flag if: {', '.join(p.flag_conditions)}" if p.flag_conditions else "")
             for p in self.points
         )
 
         output_instruction = ""
         if self.output_format == "docx" or (self.output_format == "both" and output_path):
-            doc_path = output_path or f"{self.id}_analyse.docx"
+            doc_path = output_path or f"{self.id}_analysis.docx"
             output_instruction = (
-                f"\n\nGénérer le rapport sous forme de document Word : {doc_path}\n"
-                "Utiliser generate_docx avec une section par point d'analyse."
+                f"\n\nGenerate the report as a Word document: {doc_path}\n"
+                "Use generate_docx with one section per analysis point."
             )
         elif self.output_format == "inline":
-            output_instruction = "\n\nFournir la synthèse directement dans la réponse (pas de génération DOCX)."
+            output_instruction = "\n\nProvide the summary directly in the answer (no DOCX generation)."
 
         extra = f"\n\n{self.instructions}" if self.instructions else ""
 
         return (
             f"## {self.title}\n\n"
-            f"Analyse le document {self.document_type} selon les points suivants. "
-            f"Pour chaque point : identifier la clause/référence, citer le contenu pertinent, "
-            f"et signaler toute clause inhabituelle ou potentiellement nulle.\n\n"
+            f"Analyze the {self.document_type} document against the following points. "
+            f"For each point: identify the clause/reference, quote the relevant content, "
+            f"and flag any unusual or potentially void clause.\n\n"
             f"{points_text}"
             f"{output_instruction}"
             f"{extra}"
@@ -90,7 +90,7 @@ class Playbook:
 
 
 class PlaybookLibrary:
-    """Registre de tous les playbooks disponibles."""
+    """Registry of all available playbooks."""
 
     _registry: dict[str, Playbook] = {}
 

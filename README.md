@@ -2,17 +2,19 @@
   <img src="assets/legolagents_banner.png" alt="legolagents" width="800"/>
 
 [![PyPI](https://img.shields.io/pypi/v/legolagents.svg)](https://pypi.org/project/legolagents/)
-[![Licence Apache 2.0](https://img.shields.io/badge/licence-Apache%202.0-blue.svg)](LICENSE)
+[![Apache 2.0 License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-51%20passed-brightgreen.svg)]()
-[![Basé sur smolagents](https://img.shields.io/badge/basé%20sur-smolagents-orange.svg)](https://github.com/huggingface/smolagents)
+[![Built on smolagents](https://img.shields.io/badge/built%20on-smolagents-orange.svg)](https://github.com/huggingface/smolagents)
+
+[Version française](README.fr.md)
 
 </div>
 
 ---
 
-**legolagents** étend [smolagents](https://github.com/huggingface/smolagents) avec un raisonnement juridique structuré — agnostique de juridiction par défaut.
+**legolagents** extends [smolagents](https://github.com/huggingface/smolagents) with structured legal reasoning — jurisdiction-agnostic by default.
 
-Vous avez déjà smolagents. Ajoutez legolagents et vos agents appliquent le protocole d'un juriste, quel que soit le droit applicable : ils vérifient si une décision est toujours valide avant de la citer, remontent la lignée jurisprudentielle, détectent les revirements, et révisent vos contrats avec le suivi des modifications Word natif. Précisez une juridiction (`jurisdiction="France"`, `"Belgique"`…) pour l'ancrer dans un droit donné — ou laissez l'agent générique si vous branchez votre propre base multi-juridictions.
+You already have smolagents. Add legolagents and your agents apply a jurist's protocol, whatever the applicable law: they check whether a decision is still valid before citing it, walk the citation lineage, detect overturned rulings, and revise your contracts with native Word tracked changes. Set a jurisdiction (`jurisdiction="France"`, `"Belgium"`…) to ground it in a given legal system — or leave it generic if you're plugging in your own multi-jurisdiction database.
 
 ```bash
 pip install legolagents
@@ -20,107 +22,107 @@ pip install legolagents
 
 ---
 
-## Ce que ça change concrètement
+## What actually changes
 
-**Sans legolagents**, un agent smolagents répond à une question juridique en cherchant des mots-clés. Il peut citer une décision renversée depuis 3 ans sans le savoir.
+**Without legolagents**, a smolagents agent answers a legal question by keyword search. It might cite a decision that was overturned three years ago without knowing it.
 
-**Avec legolagents**, l'agent applique automatiquement le protocole d'un juriste :
-vérifie la validité de chaque décision, distingue les décisions de principe des décisions d'espèce, remonte les citations sur plusieurs niveaux, et signale les divergences entre chambres ou juridictions.
+**With legolagents**, the agent automatically applies a jurist's protocol:
+it checks the validity of each decision, distinguishes landmark decisions from case-specific ones, walks citations across several levels, and flags divergences between courts or jurisdictions.
 
 ---
 
-## Démarrage rapide (n'importe quelle juridiction)
+## Quickstart (any jurisdiction)
 
-legolagents ne présuppose aucune base de données ni aucun droit — vous branchez vos propres outils :
+legolagents doesn't assume any database or any legal system — you plug in your own tools:
 
 ```python
 from legolagents import LegalResearchAgent
 from legolagents.tools.retrieval import JurisprudenceSearchTool
 from smolagents import LiteLLMModel
 
-class MonOutilDeRecherche(JurisprudenceSearchTool):
+class MySearchTool(JurisprudenceSearchTool):
     def forward(self, query: str, domaine: str = "", limit: int = 5) -> str:
-        resultats = ma_base.rechercher(query)
-        return self.format_results(resultats)
+        results = my_database.search(query)
+        return self.format_results(results)
 
 model = LiteLLMModel(model_id="anthropic/claude-sonnet-4-5")
 agent = LegalResearchAgent(
-    tools=[MonOutilDeRecherche()],
+    tools=[MySearchTool()],
     model=model,
-    jurisdiction="France",   # ou "Belgique", "Québec"… ou vide (générique)
+    jurisdiction="France",   # or "Belgium", "Quebec"… or empty (generic)
 )
-print(agent.run("Quelle est la jurisprudence sur la rupture abusive de promesse de vente ?"))
+print(agent.run("What is the case law on wrongful termination of a sale agreement?"))
 ```
 
-L'agent vérifie automatiquement la validité des décisions, remonte le graphe de citations, et répond avec un niveau de certitude : `✅ Droit établi`, `⚡ Tendance`, `⚠️ Isolé`, ou `❌ Superseded`.
+The agent automatically checks the validity of decisions, walks the citation graph, and answers with a certainty level: `✅ Established law`, `⚡ Trending`, `⚠️ Isolated`, or `❌ Superseded`.
 
-Pas encore de base jurisprudentielle ? Voir la section [Exemple : démarrer sur le marché français](#exemple--démarrer-sur-le-marché-français-smartlawyer-mcp) plus bas — un connecteur MCP prêt à l'emploi pour tester le framework sans rien construire.
+Don't have a case law database yet? See the [Example: bootstrapping on the French market](#example-bootstrapping-on-the-french-market-smartlawyer-mcp) section below — a ready-to-use MCP connector to try the framework without building anything.
 
 ---
 
-## Autres exemples
+## Other examples
 
-### Révision de contrat avec Accept / Rejeter dans Word
+### Contract revision with Accept / Reject in Word
 
 ```python
 from legolagents import LegalDocumentAgent
 
-agent = LegalDocumentAgent(model=model, jurisdiction="France", legal_domain="droit social")
+agent = LegalDocumentAgent(model=model, jurisdiction="France", legal_domain="employment law")
 agent.review(
-    "contrat.docx",
-    "La clause de non-concurrence n'a pas de contrepartie financière — la corriger",
-    output_path="contrat_révisé.docx",
+    "contract.docx",
+    "The non-compete clause has no financial consideration — fix it",
+    output_path="contract_revised.docx",
 )
-# → ouvrir dans Word ou LibreOffice → Accept / Rejeter chaque modification
+# → open in Word or LibreOffice → Accept / Reject each change
 ```
 
-Pas de régénération du document entier. L'agent modifie chirurgicalement les clauses concernées et injecte les balises Word natives (`<w:del>` / `<w:ins>`).
+No full document regeneration. The agent surgically edits the relevant clauses and injects native Word tracked-change tags (`<w:del>` / `<w:ins>`).
 
-### Analyse structurée d'un bail commercial (exemple droit français)
+### Structured analysis of a commercial lease (French law example)
 
 ```python
 from legolagents import LegalDocumentAgent
 from legolagents.playbooks import PlaybookLibrary
 
 agent    = LegalDocumentAgent(model=model, jurisdiction="France")
-playbook = PlaybookLibrary.get("bail_commercial")  # 14 points L145 C.com.
-agent.run(f"Document : bail.docx\n\n{playbook.to_prompt(output_path='analyse.docx')}")
-# → rapport Word : clause résolutoire sans mise en demeure ⚠️, taxe foncière illégale ⚠️…
+playbook = PlaybookLibrary.get("bail_commercial")  # 14 points, French Commercial Code L145
+agent.run(f"Document: lease.docx\n\n{playbook.to_prompt(output_path='analysis.docx')}")
+# → Word report: termination clause without formal notice ⚠️, unlawful property tax pass-through ⚠️…
 ```
 
-### Comparaison de N contrats sur M critères
+### Comparing N documents across M criteria
 
 ```python
 agent.compare(
-    ["bail_A.docx", "bail_B.docx", "bail_C.docx"],
-    criteres=["Durée", "Indexation", "Clause résolutoire", "Charges locataires"],
+    ["lease_A.docx", "lease_B.docx", "lease_C.docx"],
+    criteria=["Term", "Indexation", "Termination clause", "Tenant charges"],
     output_path="due_diligence.docx",
 )
-# → matrice avec signalement automatique des clauses à risque
+# → matrix with automatic flagging of risky clauses
 ```
 
 ---
 
-## Brancher votre propre base de données
+## Plug in your own database
 
-legolagents définit des interfaces — vous implémentez le `forward()` pour votre backend, dans n'importe quelle langue ou juridiction :
+legolagents defines interfaces — you implement `forward()` for your backend, in any language or jurisdiction:
 
 ```python
 from legolagents.tools.retrieval import JurisprudenceSearchTool
 
-class MonOutil(JurisprudenceSearchTool):
+class MyTool(JurisprudenceSearchTool):
     def forward(self, query: str, domaine: str = "", limit: int = 5) -> str:
-        resultats = ma_base.rechercher(query)
-        return self.format_results(resultats)
+        results = my_database.search(query)
+        return self.format_results(results)
 ```
 
-Fonctionne avec Qdrant, Elasticsearch, une API REST, ou n'importe quel MCP juridique.
+Works with Qdrant, Elasticsearch, a REST API, or any legal MCP server.
 
 ---
 
-## Exemple : démarrer sur le marché français (SmartLawyer MCP)
+## Example: bootstrapping on the French market (SmartLawyer MCP)
 
-Pas encore de base jurisprudentielle ? Le [MCP SmartLawyer](https://mcp.smartlawyer.ai) donne accès à **1M+ décisions françaises** et **13 outils Legal Graph** — pratique pour prototyper un projet legolagents sans rien construire. **Mode développeur gratuit.**
+Don't have a case law database yet? [SmartLawyer MCP](https://mcp.smartlawyer.ai) gives access to **1M+ French court decisions** and **13 Legal Graph tools** — handy for prototyping a legolagents project without building anything. **Free developer tier.**
 
 ```bash
 pip install 'legolagents[mcp]'
@@ -130,36 +132,36 @@ pip install 'legolagents[mcp]'
 from legolagents import LegalResearchAgent
 from legolagents.mcp import SmartLawyerMCP
 
-with SmartLawyerMCP(api_key="sk-sl-votre-cle") as outils:
-    agent = LegalResearchAgent(tools=outils, model=model, jurisdiction="France")
-    agent.run("L'arrêt 17-19.860 est-il toujours valide ?")
+with SmartLawyerMCP(api_key="sk-sl-your-key") as tools:
+    agent = LegalResearchAgent(tools=tools, model=model, jurisdiction="France")
+    agent.run("Is decision 17-19.860 still valid?")
 ```
 
-→ [Obtenir une clé gratuite](https://smartlawyer.ai) · [Documentation MCP](https://mcp.smartlawyer.ai)
+→ [Get a free API key](https://smartlawyer.ai) · [MCP documentation](https://mcp.smartlawyer.ai)
 
-Ce connecteur est un exemple parmi d'autres MCP juridiques possibles (voir "Brancher votre propre base" ci-dessus) — le cœur du framework n'en dépend pas.
+This connector is one example among other possible legal MCP servers (see "Plug in your own database" above) — the core of the framework doesn't depend on it.
 
 ---
 
-## Playbooks disponibles (exemples droit français)
+## Available playbooks (French law examples)
 
-| Identifiant | Document | Points d'analyse |
+| ID | Document | Analysis points |
 |---|---|---|
-| `bail_commercial` | Bail commercial | 14 (L145-1 C.com.) |
-| `contrat_travail` | Contrat CDI/CDD | 12 (Code du travail) |
-| `pacte_associes` | Pacte d'associés | 15 |
-| `convention_credit` | Convention de crédit | 18 |
+| `bail_commercial` | Commercial lease | 14 (French Commercial Code L145-1) |
+| `contrat_travail` | Employment contract (CDI/CDD) | 12 (French Labor Code) |
+| `pacte_associes` | Shareholders' agreement | 15 |
+| `convention_credit` | Credit agreement | 18 |
 
-Ces playbooks sont fournis prêts à l'emploi pour le marché français ; écrivez les vôtres avec `Playbook`/`PlaybookLibrary` pour toute autre juridiction ou type de document.
-
----
-
-## Contribuer
-
-Issues et PR bienvenus — playbooks supplémentaires, nouvelles interfaces d'outils, support d'autres juridictions (Belgique, Suisse, Québec, common law…).
+These playbooks ship ready-to-use for the French market; write your own with `Playbook`/`PlaybookLibrary` for any other jurisdiction or document type.
 
 ---
 
-## Licence
+## Contributing
 
-Apache 2.0 · Construit par [SmartLawyer AI](https://smartlawyer.ai)
+Issues and PRs welcome — additional playbooks, new tool interfaces, support for other jurisdictions (Belgium, Switzerland, Quebec, common law…).
+
+---
+
+## License
+
+Apache 2.0 · Built by [SmartLawyer AI](https://smartlawyer.ai)

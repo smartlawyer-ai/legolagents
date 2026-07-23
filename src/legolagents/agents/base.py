@@ -1,25 +1,25 @@
 """
 legolagents.agents.base
 ───────────────────────
-LegalAgent — extension de ToolCallingAgent avec une stratégie de raisonnement
-juridique structurée, agnostique de juridiction par défaut.
+LegalAgent — extends ToolCallingAgent with a structured legal reasoning
+strategy, jurisdiction-agnostic by default.
 
-Usage :
+Usage:
     from legolagents import LegalAgent
 
     agent = LegalAgent(
         tools=[SearchJurisprudencesTool(), GetLegalGraphTool()],
         model=model,
         jurisdiction="France",
-        legal_domain="droit social",
+        legal_domain="employment law",
     )
-    result = agent.run("Quelle est la jurisprudence sur le barème Macron ?")
+    result = agent.run("What is the case law on the Macron severance scale?")
 
-Le raisonnement (protocole de qualification, validité temporelle, hiérarchie
-jurisprudentielle, traversal du graphe…) est le même quelle que soit la
-juridiction. Précisez `jurisdiction` et/ou `legal_domain` pour ancrer les
-réponses dans un droit donné, ou fournissez un `prompt_yaml` sur mesure pour
-un préréglage spécifique (ex : "base_legal_fr" pour le droit français).
+The reasoning (qualification protocol, temporal validity, case law
+hierarchy, graph traversal…) is the same regardless of jurisdiction. Set
+`jurisdiction` and/or `legal_domain` to ground answers in a given legal
+system, or supply a custom `prompt_yaml` for a specific preset (e.g.
+"base_legal_fr" for French law).
 """
 
 from __future__ import annotations
@@ -35,18 +35,18 @@ _PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
 
 def _load_yaml(name: str) -> dict:
-    """Charge un fichier YAML de prompts depuis le répertoire prompts/."""
+    """Load a prompt YAML file from the prompts/ directory."""
     path = _PROMPTS_DIR / f"{name}.yaml"
     if not path.exists():
-        raise FileNotFoundError(f"Prompt template introuvable : {path}")
+        raise FileNotFoundError(f"Prompt template not found: {path}")
     with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 
 def _build_prompt_templates(yaml_name: str, extra_context: str = "") -> dict:
     """
-    Charge les templates depuis YAML et les retourne sous forme de dict
-    compatible smolagents prompt_templates.
+    Load templates from YAML and return them as a dict compatible with
+    smolagents prompt_templates.
     """
     data = _load_yaml(yaml_name)
     if extra_context:
@@ -57,42 +57,42 @@ def _build_prompt_templates(yaml_name: str, extra_context: str = "") -> dict:
 
 class LegalAgent(ToolCallingAgent):
     """
-    Agent juridique expert, avec un raisonnement structuré agnostique de
-    juridiction par défaut (qualification, validité temporelle, hiérarchie
-    jurisprudentielle, traversal du graphe, fondement textuel…).
+    Expert legal agent, with structured reasoning that is jurisdiction-agnostic
+    by default (qualification, temporal validity, case law hierarchy, graph
+    traversal, textual basis…).
 
-    Étend ToolCallingAgent avec :
-    - Stratégie de raisonnement juridique baked in (YAML)
-    - planning_interval=2 : re-planification toutes les 2 étapes
-    - max_steps=10 : adapté à la complexité d'une recherche juridique
-    - Attributs jurisdiction et legal_domain pour ancrer les réponses
+    Extends ToolCallingAgent with:
+    - Legal reasoning strategy baked in (YAML)
+    - planning_interval=2: re-planning every 2 steps
+    - max_steps=10: suited to the complexity of legal research
+    - jurisdiction and legal_domain attributes to ground answers
 
-    Pour un droit donné (ex : France), passez `jurisdiction="France"` et/ou
-    un `prompt_yaml` sur mesure (ex : "base_legal_fr", inclus comme
-    préréglage prêt à l'emploi pour le droit français).
+    For a given legal system (e.g. France), pass `jurisdiction="France"`
+    and/or a custom `prompt_yaml` (e.g. "base_legal_fr", included as a
+    ready-to-use preset for French law).
 
     Parameters
     ----------
     tools : list[Tool]
-        Tools concrets fournis par le projet consommateur
-        (ex: QdrantJurisprudenceSearchTool, QdrantGraphTool…)
+        Concrete tools supplied by the consuming project
+        (e.g. QdrantJurisprudenceSearchTool, QdrantGraphTool…)
     model : smolagents.Model
-        Modèle LLM (OpenAIServerModel, LiteLLMModel, AnthropicModel…)
+        LLM model (OpenAIServerModel, LiteLLMModel, AnthropicModel…)
     jurisdiction : str
-        Juridiction de référence (ex: "France", "Belgique", "Québec").
-        Injectée dans la tâche pour ancrer le raisonnement.
+        Reference jurisdiction (e.g. "France", "Belgium", "Quebec").
+        Injected into the task to ground the reasoning.
     legal_domain : str
-        Domaine juridique principal (ex: "droit social", "droit civil")
+        Main legal domain (e.g. "employment law", "civil law")
     extra_context : str
-        Contexte supplémentaire injecté dans le system prompt
-        (ex: contexte d'une fiche, situation du client)
+        Extra context injected into the system prompt
+        (e.g. case brief context, client situation)
     prompt_yaml : str
-        Nom du fichier YAML de stratégie (sans extension)
-        Défaut : "base_legal" (générique, agnostique de juridiction)
+        Name of the strategy YAML file (without extension)
+        Default: "base_legal" (generic, jurisdiction-agnostic)
     max_steps : int
-        Nombre maximum d'étapes (défaut : 10)
+        Maximum number of steps (default: 10)
     planning_interval : int | None
-        Intervalle de re-planification (défaut : 2)
+        Re-planning interval (default: 2)
     """
 
     def __init__(
@@ -123,16 +123,16 @@ class LegalAgent(ToolCallingAgent):
 
     def run(self, task: str, **kwargs: Any) -> Any:
         """
-        Lance l'agent sur une tâche.
+        Run the agent on a task.
 
-        Injecte automatiquement la juridiction et le domaine juridique dans
-        la tâche si définis et non déjà mentionnés dans la tâche.
+        Automatically injects the jurisdiction and legal domain into the
+        task if set and not already mentioned in the task.
         """
         tags = []
         if self.jurisdiction and self.jurisdiction.lower() not in task.lower():
-            tags.append(f"Juridiction : {self.jurisdiction}")
+            tags.append(f"Jurisdiction: {self.jurisdiction}")
         if self.legal_domain and self.legal_domain.lower() not in task.lower():
-            tags.append(f"Domaine : {self.legal_domain}")
+            tags.append(f"Domain: {self.legal_domain}")
         if tags:
             task = f"[{' | '.join(tags)}]\n\n{task}"
         return super().run(task, **kwargs)

@@ -25,9 +25,9 @@ from legolagents.tools.document import (
 
 class TestCertainty:
     def test_labels(self):
-        assert Certainty.ESTABLISHED.label() == "✅ Droit établi"
-        assert Certainty.TRENDING.label()    == "⚡ Tendance"
-        assert Certainty.ISOLATED.label()    == "⚠️ Isolé"
+        assert Certainty.ESTABLISHED.label() == "✅ Established law"
+        assert Certainty.TRENDING.label()    == "⚡ Trending"
+        assert Certainty.ISOLATED.label()    == "⚠️ Isolated"
         assert Certainty.SUPERSEDED.label()  == "❌ Superseded"
 
     def test_from_payload_superseded(self):
@@ -142,14 +142,14 @@ class TestReadDocumentTool:
         tool   = ReadDocumentTool()
         result = tool.forward("/tmp/does_not_exist_xyz.pdf")
         assert "❌" in result
-        assert "introuvable" in result.lower()
+        assert "not found" in result.lower()
 
     def test_unsupported_format(self, tmp_path):
         f = tmp_path / "file.xls"
         f.write_bytes(b"fake")
         result = ReadDocumentTool().forward(str(f))
         assert "❌" in result
-        assert "supporté" in result.lower()
+        assert "unsupported" in result.lower()
 
     def test_read_txt(self, tmp_path):
         f = tmp_path / "doc.txt"

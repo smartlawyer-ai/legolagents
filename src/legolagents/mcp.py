@@ -1,12 +1,12 @@
 """
 legolagents.mcp
 ───────────────
-Intégration MCP pour legolagents.
+MCP integration for legolagents.
 
-Permet de brancher n'importe quel serveur MCP juridique sur les agents
-legolagents, notamment le Legal Graph SmartLawyer (13 tools).
+Lets you plug any legal MCP server into legolagents agents, notably the
+SmartLawyer Legal Graph (13 tools).
 
-Usage le plus simple — SmartLawyer MCP :
+Simplest usage — SmartLawyer MCP:
 
     from legolagents import LegalResearchAgent
     from legolagents.mcp import SmartLawyerMCP
@@ -14,21 +14,21 @@ Usage le plus simple — SmartLawyer MCP :
 
     model = OpenAIServerModel(model_id="claude-sonnet-4-5", api_base="...")
 
-    with SmartLawyerMCP(api_key="sk-votre-cle") as legal_tools:
+    with SmartLawyerMCP(api_key="sk-your-key") as legal_tools:
         agent = LegalResearchAgent(tools=legal_tools, model=model)
-        result = agent.run("Quels sont les arrêts de principe sur le barème Macron ?")
+        result = agent.run("What are the landmark decisions on the Macron severance scale?")
         print(result)
 
-Usage avec n'importe quel serveur MCP juridique :
+Usage with any legal MCP server:
 
     from legolagents.mcp import LegalMCPClient
 
-    with LegalMCPClient(url="https://mon-mcp-juridique.fr/mcp") as tools:
+    with LegalMCPClient(url="https://my-legal-mcp.example/mcp") as tools:
         agent = LegalResearchAgent(tools=tools, model=model)
         ...
 
-Les tools MCP sont utilisés tels quels par smolagents — legolagents
-apporte uniquement la stratégie de raisonnement (system prompt, planning).
+MCP tools are used as-is by smolagents — legolagents only contributes the
+reasoning strategy (system prompt, planning).
 """
 
 from __future__ import annotations
@@ -45,19 +45,19 @@ except ImportError:
 
 class LegalMCPClient(MCPClient if _HAS_MCP else object):  # type: ignore[misc]
     """
-    Client MCP générique pour serveurs juridiques.
-    Wraps smolagents.MCPClient avec des defaults adaptés au domaine légal.
+    Generic MCP client for legal servers.
+    Wraps smolagents.MCPClient with defaults suited to the legal domain.
 
     Parameters
     ----------
     url : str
-        URL du serveur MCP (streamable-http).
+        MCP server URL (streamable-http).
     transport : str
-        "streamable-http" (défaut) ou "sse".
+        "streamable-http" (default) or "sse".
     structured_output : bool
-        Active le support des outputSchema MCP (défaut : True).
+        Enables support for MCP outputSchema (default: True).
     **kwargs
-        Tout autre paramètre passé à smolagents.MCPClient.
+        Any other parameter passed to smolagents.MCPClient.
     """
 
     def __init__(
@@ -69,8 +69,8 @@ class LegalMCPClient(MCPClient if _HAS_MCP else object):  # type: ignore[misc]
     ) -> None:
         if not _HAS_MCP:
             raise ImportError(
-                "smolagents MCP support requis. "
-                "Installer : pip install 'smolagents[mcp]'"
+                "smolagents MCP support required. "
+                "Install: pip install 'smolagents[mcp]'"
             )
         super().__init__(
             {"url": url, "transport": transport},
@@ -81,9 +81,9 @@ class LegalMCPClient(MCPClient if _HAS_MCP else object):  # type: ignore[misc]
 
 class SmartLawyerMCP(LegalMCPClient):
     """
-    Client MCP pour le Legal Graph SmartLawyer.
+    MCP client for the SmartLawyer Legal Graph.
 
-    13 tools disponibles automatiquement :
+    13 tools available automatically:
       search_jurisprudences, get_fiche, get_legal_graph,
       search_by_article, get_cited_by, find_arrets_de_principe,
       find_revirements, superseded_chain, get_procedure_lineage,
@@ -92,8 +92,8 @@ class SmartLawyerMCP(LegalMCPClient):
     Parameters
     ----------
     api_key : str
-        Clé API SmartLawyer (format sk-sl-…).
-        Obtenir sur https://smartlawyer.ai → Paramètres → Clés API
+        SmartLawyer API key (format sk-sl-…).
+        Get one at https://smartlawyer.ai → Settings → API Keys
 
     Example
     -------
@@ -103,11 +103,11 @@ class SmartLawyerMCP(LegalMCPClient):
     >>>
     >>> model = LiteLLMModel(model_id="anthropic/claude-sonnet-4-5")
     >>>
-    >>> with SmartLawyerMCP(api_key="sk-sl-votre-cle") as tools:
+    >>> with SmartLawyerMCP(api_key="sk-sl-your-key") as tools:
     ...     agent = LegalResearchAgent(tools=tools, model=model)
     ...     result = agent.run(
-    ...         "L'arrêt 17-19.860 est-il toujours valide ? "
-    ...         "Quels arrêts l'ont éventuellement renversé ?"
+    ...         "Is decision 17-19.860 still valid? "
+    ...         "Has it possibly been overturned by any subsequent decision?"
     ...     )
     ...     print(result)
     """

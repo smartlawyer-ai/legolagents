@@ -1,18 +1,18 @@
 """
 legolagents.tools.document
 ──────────────────────────
-Tools de traitement documentaire — réécriture Python des capacités de mike.
+Document processing tools — clean-room Python rewrite of mike's capabilities.
 
-Trois tools concrets (pas abstraits) — prêts à l'emploi :
+Three concrete (non-abstract) tools — ready to use:
 
-  ReadDocumentTool       — Lecture PDF / DOCX → texte
-  GenerateDocxTool       — Génération DOCX depuis contenu structuré
-  TrackedChangesTool     — Modifications DOCX comme suivi Word (Accept/Reject)
-  TabularAnalysisTool    — Analyse N documents × M critères → matrice
+  ReadDocumentTool       — PDF / DOCX reading → text
+  GenerateDocxTool       — DOCX generation from structured content
+  TrackedChangesTool     — DOCX edits as native Word tracked changes (Accept/Reject)
+  TabularAnalysisTool    — N documents × M criteria analysis → matrix
 
-TrackedChangesTool est le bijou technique : il injecte des balises
-<w:ins>/<w:del> nativement reconnues par Word et LibreOffice, sans
-passer par une conversion ou un service externe.
+TrackedChangesTool is the technical centerpiece: it injects <w:ins>/<w:del>
+tags natively recognized by Word and LibreOffice, without any conversion
+or external service.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from typing import Any, Optional
 
 from .base import LegalTool
 
-# ── Namespaces XML Word ────────────────────────────────────────────────────────
+# ── Word XML namespaces ────────────────────────────────────────────────────────
 
 W_NS  = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 XML_NS = "http://www.w3.org/XML/1998/namespace"
@@ -45,7 +45,7 @@ NSMAP = {
 
 @dataclass
 class EditInput:
-    """Une modification à appliquer sur un document DOCX."""
+    """A single edit to apply to a DOCX document."""
     find: str
     replace: str
     context_before: str = ""
@@ -55,7 +55,7 @@ class EditInput:
 
 @dataclass
 class AppliedChange:
-    """Résultat de l'application d'une modification."""
+    """Result of applying one edit."""
     change_id: str
     find: str
     replace: str
@@ -67,7 +67,7 @@ class AppliedChange:
 
 @dataclass
 class DocxSection:
-    """Section d'un document généré."""
+    """Section of a generated document."""
     heading: str
     content: str = ""
     level: int = 1                    # 1 = H1, 2 = H2
@@ -76,25 +76,25 @@ class DocxSection:
 
 @dataclass
 class TabularCell:
-    """Cellule d'une analyse tabulaire."""
+    """Cell of a tabular analysis."""
     summary: str
-    flag: Optional[str] = None        # "⚠️", "✅", "❌" ou None
+    flag: Optional[str] = None        # "⚠️", "✅", "❌" or None
     reasoning: str = ""
 
 
-# ── Helpers XML ───────────────────────────────────────────────────────────────
+# ── XML helpers ───────────────────────────────────────────────────────────────
 
 def _set_preserve(t_elem) -> None:
-    """Ajoute xml:space='preserve' si le texte commence/finit par un espace."""
+    """Add xml:space='preserve' if the text starts/ends with a space."""
     if t_elem.text and (t_elem.text.startswith(" ") or t_elem.text.endswith(" ")):
         t_elem.set(f"{XML}space", "preserve")
 
 
 def _para_flat_text(para) -> str:
-    """Texte plat d'un paragraphe (ignore le contenu w:del)."""
+    """Flat text of a paragraph (ignores w:del content)."""
     parts = []
     for elem in para.iter():
-        # Ignorer les textes supprimés
+        # Skip deleted text
         if elem.tag == f"{W}delText":
             continue
         if elem.tag == f"{W}t" and elem.text:
@@ -104,8 +104,8 @@ def _para_flat_text(para) -> str:
 
 def _para_char_map(para) -> tuple[str, list[tuple]]:
     """
-    Construit le mapping char_idx → (run_elem, offset_in_run).
-    Seuls les runs visibles (hors w:del) sont inclus.
+    Build the char_idx → (run_elem, offset_in_run) mapping.
+    Only visible runs (outside w:del) are included.
     """
     flat: list[str] = []
     char_map: list[tuple] = []       # (run_elem, offset_in_run)
@@ -113,7 +113,7 @@ def _para_char_map(para) -> tuple[str, list[tuple]]:
     def _collect(elem, in_del: bool = False):
         tag_local = elem.tag.split("}")[-1] if "}" in elem.tag else elem.tag
         if tag_local == "del":
-            return                   # tout le contenu est ignoré
+            return                   # all content is ignored
         if tag_local == "r":
             t = elem.find(f"{W}t")
             if t is not None and t.text:
@@ -131,12 +131,12 @@ def _para_char_map(para) -> tuple[str, list[tuple]]:
 
 
 def _get_rpr(run_elem) -> Optional[Any]:
-    """Récupère l'élément w:rPr (mise en forme) d'un run."""
+    """Get the w:rPr (formatting) element of a run."""
     return run_elem.find(f"{W}rPr")
 
 
 def _make_text_run(text: str, rpr=None) -> Any:
-    """Crée un <w:r> avec le texte et la mise en forme donnés."""
+    """Create a <w:r> with the given text and formatting."""
     from lxml import etree
     r = etree.Element(f"{W}r")
     if rpr is not None:
@@ -148,7 +148,7 @@ def _make_text_run(text: str, rpr=None) -> Any:
 
 
 def _make_del_run(text: str, rpr=None) -> Any:
-    """Crée un <w:r> avec <w:delText> pour le contenu supprimé."""
+    """Create a <w:r> with <w:delText> for deleted content."""
     from lxml import etree
     r = etree.Element(f"{W}r")
     if rpr is not None:
@@ -168,13 +168,13 @@ def _apply_edit_to_paragraph(
     date_str: str,
 ) -> bool:
     """
-    Applique une modification trackée à un paragraphe XML.
+    Apply a tracked edit to an XML paragraph.
 
-    Stratégie : on reconstruit le paragraphe en trois parties —
-    texte avant, w:del (ancien), w:ins (nouveau), texte après.
-    La mise en forme du run portant le texte cible est conservée.
+    Strategy: rebuild the paragraph in three parts —
+    text before, w:del (old), w:ins (new), text after.
+    The formatting of the run carrying the target text is preserved.
 
-    Returns True si la modification a été appliquée.
+    Returns True if the edit was applied.
     """
     from lxml import etree
 
@@ -182,7 +182,7 @@ def _apply_edit_to_paragraph(
     if not flat:
         return False
 
-    # Trouver la position cible avec le contexte comme ancrage
+    # Find the target position using the context as an anchor
     ctx_before = edit.context_before or ""
     ctx_after  = edit.context_after  or ""
     find_text  = edit.find
@@ -203,25 +203,25 @@ def _apply_edit_to_paragraph(
     if target_end > len(char_map):
         return False
 
-    # Mise en forme depuis le premier run impliqué
+    # Formatting from the first run involved
     first_run = char_map[target_start][0]
     rpr = _get_rpr(first_run)
 
-    # Propriétés du paragraphe (w:pPr) — à conserver
+    # Paragraph properties (w:pPr) — to preserve
     ppr = para.find(f"{W}pPr")
 
-    # Textes des trois zones
+    # Text of the three zones
     before_text = flat[:target_start]
     target_text = flat[target_start:target_end]
     after_text  = flat[target_end:]
 
-    # Vider le paragraphe (garder pPr)
+    # Clear the paragraph (keep pPr)
     for child in list(para):
         local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
         if local != "pPr":
             para.remove(child)
 
-    # Reconstruire
+    # Rebuild
     if before_text:
         para.append(_make_text_run(before_text, rpr))
 
@@ -258,28 +258,28 @@ def _apply_edit_to_paragraph(
 
 class ReadDocumentTool(LegalTool):
     """
-    Lit le contenu textuel d'un document PDF ou DOCX.
+    Reads the text content of a PDF or DOCX document.
 
-    Supporte :
-      - PDF     : extraction avec pdfplumber (tableaux inclus)
-      - DOCX    : extraction python-docx (paragraphes + tableaux)
-      - TXT/MD  : lecture directe
+    Supports:
+      - PDF     : extraction with pdfplumber (tables included)
+      - DOCX    : extraction with python-docx (paragraphs + tables)
+      - TXT/MD  : direct reading
     """
 
     name = "read_document"
     description = (
-        "Lit le contenu textuel d'un document (PDF, DOCX, TXT). "
-        "Retourne le texte extrait avec les tableaux formatés. "
-        "Appeler avant toute analyse documentaire."
+        "Reads the text content of a document (PDF, DOCX, TXT). "
+        "Returns the extracted text with tables formatted. "
+        "Call before any document analysis."
     )
     inputs = {
         "path": {
             "type": "string",
-            "description": "Chemin absolu vers le fichier à lire",
+            "description": "Absolute path to the file to read",
         },
         "max_chars": {
             "type": "integer",
-            "description": "Nombre max de caractères retournés (défaut 50 000)",
+            "description": "Max number of characters returned (default 50,000)",
             "nullable": True,
         },
     }
@@ -288,7 +288,7 @@ class ReadDocumentTool(LegalTool):
     def forward(self, path: str, max_chars: int = 50_000) -> str:
         p = Path(path)
         if not p.exists():
-            return f"❌ Fichier introuvable : {path}"
+            return f"❌ File not found: {path}"
 
         suffix = p.suffix.lower()
         try:
@@ -299,9 +299,9 @@ class ReadDocumentTool(LegalTool):
             elif suffix in (".txt", ".md"):
                 return p.read_text(encoding="utf-8", errors="replace")[:max_chars]
             else:
-                return f"❌ Format non supporté : {suffix}. Formats acceptés : PDF, DOCX, TXT, MD."
+                return f"❌ Unsupported format: {suffix}. Accepted formats: PDF, DOCX, TXT, MD."
         except Exception as e:
-            return f"❌ Erreur lecture document : {e}"
+            return f"❌ Error reading document: {e}"
 
     def _read_pdf(self, path: Path, max_chars: int) -> str:
         try:
@@ -316,13 +316,13 @@ class ReadDocumentTool(LegalTool):
                 if page_text:
                     text_parts.append(f"--- Page {page_num} ---\n{page_text}")
 
-                # Tableaux
+                # Tables
                 tables = page.extract_tables()
                 for table in tables:
                     if not table:
                         continue
                     rows = [" | ".join(str(c or "") for c in row) for row in table]
-                    text_parts.append("\n[TABLEAU]\n" + "\n".join(rows) + "\n[/TABLEAU]")
+                    text_parts.append("\n[TABLE]\n" + "\n".join(rows) + "\n[/TABLE]")
 
         result = "\n\n".join(text_parts)
         return result[:max_chars]
@@ -334,7 +334,7 @@ class ReadDocumentTool(LegalTool):
             pages = [p.extract_text() or "" for p in reader.pages]
             return "\n\n".join(pages)[:max_chars]
         except ImportError:
-            return "❌ pdfplumber ou pypdf requis. Installer : pip install pdfplumber"
+            return "❌ pdfplumber or pypdf required. Install: pip install pdfplumber"
 
     def _read_docx(self, path: Path, max_chars: int) -> str:
         from docx import Document
@@ -350,7 +350,7 @@ class ReadDocumentTool(LegalTool):
             for row in table.rows:
                 cells = [cell.text.strip() for cell in row.cells]
                 rows.append(" | ".join(cells))
-            parts.append("\n[TABLEAU]\n" + "\n".join(rows) + "\n[/TABLEAU]")
+            parts.append("\n[TABLE]\n" + "\n".join(rows) + "\n[/TABLE]")
 
         return "\n\n".join(parts)[:max_chars]
 
@@ -361,38 +361,38 @@ class ReadDocumentTool(LegalTool):
 
 class GenerateDocxTool(LegalTool):
     """
-    Génère un document DOCX structuré depuis du contenu JSON.
+    Generates a structured DOCX document from JSON content.
 
-    Supporte : titre, sections avec niveaux de titres, tableaux, orientation.
-    Le document est sauvegardé au chemin spécifié et son chemin est retourné.
+    Supports: title, sections with heading levels, tables, orientation.
+    The document is saved to the given path, which is then returned.
     """
 
     name = "generate_docx"
     description = (
-        "Génère un document Word (.docx) depuis un contenu structuré. "
-        "Utiliser pour créer des synthèses, checklists, rapports d'analyse. "
-        "Retourne le chemin du fichier généré."
+        "Generates a Word (.docx) document from structured content. "
+        "Use to create summaries, checklists, analysis reports. "
+        "Returns the path of the generated file."
     )
     inputs = {
         "title": {
             "type": "string",
-            "description": "Titre du document",
+            "description": "Document title",
         },
         "sections": {
             "type": "array",
             "description": (
-                "Liste de sections. Chaque section est un objet avec : "
+                "List of sections. Each section is an object with: "
                 "heading (str), content (str), level (int 1-3), "
-                "table (dict avec headers et rows, optionnel)."
+                "table (dict with headers and rows, optional)."
             ),
         },
         "output_path": {
             "type": "string",
-            "description": "Chemin de sauvegarde du fichier .docx",
+            "description": "Path to save the .docx file",
         },
         "landscape": {
             "type": "boolean",
-            "description": "Orientation paysage (défaut : portrait)",
+            "description": "Landscape orientation (default: portrait)",
             "nullable": True,
         },
     }
@@ -412,7 +412,7 @@ class GenerateDocxTool(LegalTool):
             from docx.oxml.ns import qn
             from docx.oxml import OxmlElement
         except ImportError:
-            return "❌ python-docx requis : pip install python-docx"
+            return "❌ python-docx required: pip install python-docx"
 
         doc = Document()
 
@@ -421,7 +421,7 @@ class GenerateDocxTool(LegalTool):
             section.orientation = 1  # WD_ORIENT.LANDSCAPE
             section.page_width, section.page_height = section.page_height, section.page_width
 
-        # Titre
+        # Title
         title_para = doc.add_heading(title, level=0)
         title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
@@ -452,61 +452,61 @@ class GenerateDocxTool(LegalTool):
                             row_cells[i].text = str(val)
 
         doc.save(output_path)
-        return f"✅ Document généré : {output_path}"
+        return f"✅ Document generated: {output_path}"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TrackedChangesTool  ← LE BIJOU
+# TrackedChangesTool  ← THE CENTERPIECE
 # ══════════════════════════════════════════════════════════════════════════════
 
 class TrackedChangesTool(LegalTool):
     """
-    Propose des modifications sur un document .docx sous forme de suivi
-    des modifications Word natif (Accept/Reject).
+    Proposes edits to a .docx document as native Word tracked changes
+    (Accept/Reject).
 
-    Chaque modification produit une paire <w:del>/<w:ins> dans le XML
-    du document, reconnue nativement par Word et LibreOffice.
-    L'utilisateur peut accepter ou rejeter chaque changement individuellement.
+    Each edit produces a <w:del>/<w:ins> pair in the document's XML,
+    natively recognized by Word and LibreOffice. The user can accept or
+    reject each change individually.
 
-    Inspiré de mike (mikeoss.com) — réécrit complètement en Python.
-    Supérieur à la version TypeScript originale car :
-      - Pas de dépendance externe (JSZip, fast-xml-parser)
-      - Gestion native des namespaces XML Word
-      - Contexte d'ancrage bidirectionnel (before + after)
-      - Rapport détaillé par modification
+    Inspired by mike (mikeoss.com) — fully rewritten in Python.
+    Superior to the original TypeScript version because:
+      - No external dependency (JSZip, fast-xml-parser)
+      - Native handling of Word XML namespaces
+      - Bidirectional anchoring context (before + after)
+      - Detailed report per edit
     """
 
     name = "edit_document_tracked"
     description = (
-        "Propose des modifications sur un document .docx comme suivi des modifications Word. "
-        "Chaque changement apparaît en Accept/Reject dans Word ou LibreOffice. "
-        "Préférer cet outil à generate_docx quand le document existe déjà : "
-        "on ne régénère pas tout, on modifie chirurgicalement."
+        "Proposes edits to a .docx document as Word tracked changes. "
+        "Each change appears as Accept/Reject in Word or LibreOffice. "
+        "Prefer this tool over generate_docx when the document already exists: "
+        "don't regenerate everything, edit surgically."
     )
     inputs = {
         "input_path": {
             "type": "string",
-            "description": "Chemin du fichier .docx à modifier",
+            "description": "Path of the .docx file to edit",
         },
         "edits": {
             "type": "array",
             "description": (
-                "Liste de modifications. Chaque modification est un objet avec : "
-                "find (str, texte à remplacer), "
-                "replace (str, nouveau texte), "
-                "context_before (str, texte précédant pour l'ancrage, recommandé), "
-                "context_after (str, texte suivant pour l'ancrage, recommandé), "
-                "reason (str, motif de la modification, optionnel)."
+                "List of edits. Each edit is an object with: "
+                "find (str, text to replace), "
+                "replace (str, new text), "
+                "context_before (str, preceding text for anchoring, recommended), "
+                "context_after (str, following text for anchoring, recommended), "
+                "reason (str, reason for the edit, optional)."
             ),
         },
         "output_path": {
             "type": "string",
-            "description": "Chemin de sauvegarde. Si omis, crée un fichier _tracked.docx",
+            "description": "Save path. If omitted, creates a _tracked.docx file",
             "nullable": True,
         },
         "author": {
             "type": "string",
-            "description": "Nom de l'auteur des modifications (défaut : 'LegalAgent')",
+            "description": "Name of the change author (default: 'LegalAgent')",
             "nullable": True,
         },
     }
@@ -522,22 +522,22 @@ class TrackedChangesTool(LegalTool):
         try:
             from lxml import etree
         except ImportError:
-            return "❌ lxml requis : pip install lxml"
+            return "❌ lxml required: pip install lxml"
 
         src = Path(input_path)
         if not src.exists():
-            return f"❌ Fichier introuvable : {input_path}"
+            return f"❌ File not found: {input_path}"
         if src.suffix.lower() != ".docx":
-            return f"❌ Format non supporté : {src.suffix}. Seul .docx est accepté."
+            return f"❌ Unsupported format: {src.suffix}. Only .docx is accepted."
 
         # Destination
         if not output_path:
             output_path = str(src.with_stem(src.stem + "_tracked"))
 
-        # Timestamp ISO 8601 pour les attributs Word
+        # ISO 8601 timestamp for Word attributes
         date_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        # Parser les edits
+        # Parse the edits
         parsed_edits: list[EditInput] = []
         for e in edits:
             if not e.get("find") or "replace" not in e:
@@ -551,9 +551,9 @@ class TrackedChangesTool(LegalTool):
             ))
 
         if not parsed_edits:
-            return "❌ Aucune modification valide fournie."
+            return "❌ No valid edit provided."
 
-        # Lire et modifier le DOCX (ZIP)
+        # Read and edit the DOCX (ZIP)
         applied_changes: list[AppliedChange] = []
         change_counter = 1
 
@@ -562,20 +562,20 @@ class TrackedChangesTool(LegalTool):
             for name in zin.namelist():
                 zip_contents[name] = zin.read(name)
 
-        # Trouver le nom du fichier document principal
+        # Find the main document file name
         doc_xml_name = "word/document.xml"
         if doc_xml_name not in zip_contents:
-            # Certains fichiers Windows utilisent des backslashes
+            # Some Windows-produced files use backslashes
             candidates = [n for n in zip_contents if n.lower().endswith("document.xml")]
             if not candidates:
-                return "❌ Structure DOCX invalide : word/document.xml introuvable."
+                return "❌ Invalid DOCX structure: word/document.xml not found."
             doc_xml_name = candidates[0]
 
-        # Parser le XML
+        # Parse the XML
         doc_xml = zip_contents[doc_xml_name]
         root = etree.fromstring(doc_xml)
 
-        # Appliquer chaque modification sur les paragraphes
+        # Apply each edit to the paragraphs
         paragraphs = list(root.iter(f"{W}p"))
 
         for edit in parsed_edits:
@@ -599,26 +599,26 @@ class TrackedChangesTool(LegalTool):
                 reason          = edit.reason,
                 applied         = applied,
                 paragraph_index = para_idx,
-                error           = None if applied else "Texte non trouvé dans le document",
+                error           = None if applied else "Text not found in the document",
             ))
 
-        # Réécrire le XML modifié
+        # Rewrite the modified XML
         modified_xml = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
         zip_contents[doc_xml_name] = modified_xml
 
-        # Écrire le nouveau fichier DOCX
+        # Write the new DOCX file
         with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zout:
             for name, data in zip_contents.items():
                 zout.writestr(name, data)
 
-        # Rapport
+        # Report
         n_ok  = sum(1 for c in applied_changes if c.applied)
         n_err = len(applied_changes) - n_ok
 
-        lines = [f"✅ Document modifié : **{output_path}**"]
-        lines.append(f"{n_ok}/{len(applied_changes)} modification(s) appliquée(s)")
+        lines = [f"✅ Document edited: **{output_path}**"]
+        lines.append(f"{n_ok}/{len(applied_changes)} edit(s) applied")
         if n_err:
-            lines.append(f"⚠️ {n_err} modification(s) non trouvée(s) :")
+            lines.append(f"⚠️ {n_err} edit(s) not found:")
 
         for c in applied_changes:
             status = "✅" if c.applied else "❌"
@@ -627,7 +627,7 @@ class TrackedChangesTool(LegalTool):
             if not c.applied and c.error:
                 lines.append(f"     → {c.error}")
 
-        lines.append("\n💡 Ouvrir le fichier dans Word ou LibreOffice pour Accept/Reject les modifications.")
+        lines.append("\n💡 Open the file in Word or LibreOffice to Accept/Reject the changes.")
         return "\n".join(lines)
 
 
@@ -637,43 +637,43 @@ class TrackedChangesTool(LegalTool):
 
 class TabularAnalysisTool(LegalTool):
     """
-    Analyse N documents selon M critères → matrice de synthèse.
+    Analyzes N documents against M criteria → summary matrix.
 
-    Inspiré de mike — adapté pour la due diligence juridique française.
+    Inspired by mike — adapted for legal due diligence, any jurisdiction.
 
-    Chaque cellule (document × critère) est extraite par l'agent via
-    l'outil read_document + une question ciblée.
+    Each cell (document × criterion) is extracted by the agent via the
+    read_document tool + a targeted question.
 
-    Usage typique : comparer des baux, des contrats-cadres, des CGV
-    sur des critères standardisés (durée, résiliation, garanties…).
+    Typical usage: compare leases, master agreements, terms and conditions
+    against standardized criteria (term, termination, guarantees…).
     """
 
     name = "tabular_analysis"
     description = (
-        "Analyse plusieurs documents selon des critères définis, produit une matrice. "
-        "Idéal pour la due diligence : comparer N contrats sur M points clés. "
-        "Retourne un tableau Markdown + une synthèse des points d'attention."
+        "Analyzes multiple documents against defined criteria, produces a matrix. "
+        "Ideal for due diligence: comparing N contracts on M key points. "
+        "Returns a Markdown table + a summary of points of attention."
     )
     inputs = {
         "documents": {
             "type": "array",
             "description": (
-                "Liste de documents à analyser. Chaque document est un objet avec : "
-                "path (str, chemin du fichier), label (str, nom court)."
+                "List of documents to analyze. Each document is an object with: "
+                "path (str, file path), label (str, short name)."
             ),
         },
         "columns": {
             "type": "array",
             "description": (
-                "Critères d'analyse. Chaque colonne est un objet avec : "
-                "name (str, nom de la colonne), "
-                "question (str, question précise à poser au document), "
-                "flag_if (str, condition de signalement ⚠️, optionnel)."
+                "Analysis criteria. Each column is an object with: "
+                "name (str, column name), "
+                "question (str, precise question to ask of the document), "
+                "flag_if (str, flagging condition ⚠️, optional)."
             ),
         },
         "output_path": {
             "type": "string",
-            "description": "Chemin DOCX de sortie (optionnel)",
+            "description": "Output DOCX path (optional)",
             "nullable": True,
         },
     }
@@ -686,11 +686,11 @@ class TabularAnalysisTool(LegalTool):
         output_path: Optional[str] = None,
     ) -> str:
         if not documents or not columns:
-            return "❌ Fournir au moins un document et un critère."
+            return "❌ Provide at least one document and one criterion."
 
         reader = ReadDocumentTool()
 
-        # Lire tous les documents
+        # Read all documents
         doc_contents: dict[str, str] = {}
         for doc in documents:
             path  = doc.get("path", "")
@@ -698,7 +698,7 @@ class TabularAnalysisTool(LegalTool):
             content = reader.forward(path)
             doc_contents[label] = content
 
-        # Construire la matrice
+        # Build the matrix
         matrix: dict[str, dict[str, TabularCell]] = {}
         flags: list[str] = []
 
@@ -709,20 +709,20 @@ class TabularAnalysisTool(LegalTool):
 
             for col in columns:
                 col_name  = col.get("name", "?")
-                question  = col.get("question", f"Quel est {col_name} dans ce document ?")
+                question  = col.get("question", f"What is {col_name} in this document?")
                 flag_if   = col.get("flag_if", "")
 
-                # Extraction simplifiée : chercher la réponse dans le texte
-                # En production, ceci serait un appel LLM via le modèle de l'agent
+                # Simplified extraction: look for the answer in the text
+                # In production, this would be an LLM call via the agent's model
                 cell = self._extract_cell(text, question, col_name)
 
                 if flag_if and flag_if.lower() in (cell.summary or "").lower():
                     cell.flag = "⚠️"
-                    flags.append(f"{label} / {col_name} : {cell.summary[:100]}")
+                    flags.append(f"{label} / {col_name}: {cell.summary[:100]}")
 
                 matrix[label][col_name] = cell
 
-        # Formater en Markdown
+        # Format as Markdown
         col_names = [c.get("name", "?") for c in columns]
         header = "| Document | " + " | ".join(col_names) + " |"
         sep    = "|---|" + "---|" * len(col_names)
@@ -742,12 +742,12 @@ class TabularAnalysisTool(LegalTool):
         result = "\n".join(rows)
 
         if flags:
-            result += "\n\n**⚠️ Points d'attention :**\n"
+            result += "\n\n**⚠️ Points of attention:**\n"
             result += "\n".join(f"- {f}" for f in flags)
 
         if output_path:
             gen = GenerateDocxTool()
-            sections = [{"heading": "Matrice d'analyse", "content": "", "level": 1,
+            sections = [{"heading": "Analysis Matrix", "content": "", "level": 1,
                          "table": {
                              "headers": ["Document"] + col_names,
                              "rows": [
@@ -759,22 +759,22 @@ class TabularAnalysisTool(LegalTool):
                              ],
                          }}]
             gen.forward(
-                title="Analyse Comparative",
+                title="Comparative Analysis",
                 sections=sections,
                 output_path=output_path,
             )
-            result += f"\n\n📄 Rapport DOCX : {output_path}"
+            result += f"\n\n📄 DOCX report: {output_path}"
 
         return result
 
     def _extract_cell(self, doc_text: str, question: str, col_name: str) -> TabularCell:
         """
-        Extraction basique par recherche de mots-clés.
-        En production, remplacer par un appel LLM.
+        Basic extraction via keyword search.
+        In production, replace with an LLM call.
         """
-        # Recherche des N premiers mots du nom de colonne dans le texte
+        # Search for the column name's keywords in the text
         keywords = col_name.lower().split()
         for line in doc_text.split("\n"):
             if any(kw in line.lower() for kw in keywords):
                 return TabularCell(summary=line.strip()[:200])
-        return TabularCell(summary="Non trouvé dans le document")
+        return TabularCell(summary="Not found in the document")
