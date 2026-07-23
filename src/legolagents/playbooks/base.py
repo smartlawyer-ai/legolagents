@@ -11,12 +11,32 @@ Inspired by mike's builtinWorkflows — rewritten with:
   - Jurisdiction-agnostic core (bring your own legal content per playbook)
   - Precise, actionable extraction points
   - Inline + DOCX support depending on the request
+
+Writing your own playbook is meant to be a one-liner:
+
+    from legolagents.playbooks import Playbook
+
+    Playbook.quick("NDA Review", points=[
+        "Parties — who are the contracting parties?",
+        "Term — how long does the confidentiality obligation last?",
+        "Carve-outs — what information is excluded from confidentiality?",
+    ]).register()
+
+`Playbook.quick()` and the `.register()` shortcut exist purely to remove
+boilerplate; `PlaybookPoint` and `Playbook(...)` are still there directly
+for full control (flag conditions, custom output format, instructions…).
 """
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Union
+
+
+def _slugify(text: str) -> str:
+    """Turn a title into a lowercase_snake_case id."""
+    return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
 
 
 @dataclass
@@ -55,6 +75,67 @@ class Playbook:
     output_format: str = "inline"
     instructions: str = ""
     legal_domain: str = ""
+
+    @classmethod
+    def quick(
+        cls,
+        title: str,
+        points: list[Union[str, tuple[str, str]]],
+        id: Optional[str] = None,
+        document_type: str = "",
+        **kwargs,
+    ) -> "Playbook":
+        """
+        Build a Playbook with minimal boilerplate — the fast path for
+        writing your own playbook.
+
+        Parameters
+        ----------
+        title : str
+            Displayed title. Also used to derive `id` if not given.
+        points : list[str | tuple[str, str]]
+            Each point is either a "Label — description" string (split on
+            the first " — ", " - ", or ": "), or an explicit
+            (label, description) tuple. Numbered automatically.
+        id : str
+            Unique identifier. Defaults to a slug of `title`.
+        document_type : str
+            Targeted document type. Defaults to `title`.
+        **kwargs
+            Anything else accepted by Playbook (output_format,
+            instructions, legal_domain…).
+
+        Example
+        -------
+        >>> Playbook.quick("NDA Review", points=[
+        ...     "Parties — who are the contracting parties?",
+        ...     ("Term", "How long does confidentiality last?"),
+        ... ]).register()
+        """
+        parsed_points: list[PlaybookPoint] = []
+        for i, p in enumerate(points, start=1):
+            if isinstance(p, tuple):
+                label, description = p
+            else:
+                label, description = p, ""
+                for sep in (" — ", " - ", ": "):
+                    if sep in p:
+                        label, description = p.split(sep, 1)
+                        break
+            parsed_points.append(PlaybookPoint(i, label.strip(), description.strip()))
+
+        return cls(
+            id=id or _slugify(title),
+            title=title,
+            document_type=document_type or title,
+            points=parsed_points,
+            **kwargs,
+        )
+
+    def register(self) -> "Playbook":
+        """Register this playbook in PlaybookLibrary. Returns self for chaining."""
+        PlaybookLibrary.register(self)
+        return self
 
     def to_prompt(self, output_path: Optional[str] = None) -> str:
         """
