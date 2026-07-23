@@ -5,16 +5,16 @@ _PROMPTS_DIR = Path(__file__).parent
 
 
 def load_prompt(name: str) -> dict:
-    """Charge un template YAML depuis le répertoire prompts/."""
+    """Load a YAML template from the prompts/ directory."""
     path = _PROMPTS_DIR / (f"{name}.yaml" if not name.endswith(".yaml") else name)
     if not path.exists():
-        raise FileNotFoundError(f"Template introuvable : {path}")
+        raise FileNotFoundError(f"Template not found: {path}")
     with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 
 def get_system_prompt(name: str) -> str:
-    """Retourne uniquement le system_prompt d'un template YAML."""
+    """Return only the system_prompt of a YAML template."""
     return load_prompt(name).get("system_prompt", "")
 
 

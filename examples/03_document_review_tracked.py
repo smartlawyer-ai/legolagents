@@ -1,12 +1,16 @@
 """
-Exemple 3 — Révision de contrat avec suivi des modifications Word
+Example 3 — Contract revision with Word tracked changes
 ══════════════════════════════════════════════════════════════════
 
-Use case : réviser une clause de non-concurrence d'un contrat de travail
-en regard de la jurisprudence Soc. 2002, avec Accept/Reject dans Word.
+Use case: revise a non-compete clause in an employment contract in light
+of 2002 case law, with Accept/Reject in Word.
 
-Ne nécessite PAS de clé SmartLawyer — utilise les tools document concrets.
-Optionnel : brancher le MCP pour que l'agent cite la jurisprudence.
+Does NOT require a SmartLawyer key — uses the concrete document tools.
+Optional: plug in the MCP so the agent cites case law.
+
+Note: this example is set under French law (employment contract, French
+Labor Code references) to demonstrate the workflow end to end — the
+document tools themselves are jurisdiction-agnostic.
 """
 
 import os
@@ -21,9 +25,9 @@ WORK_DIR = Path("/tmp/legolagents_demo")
 WORK_DIR.mkdir(exist_ok=True)
 
 
-# ── Étape 0 : Créer un contrat de travail de demo ─────────────────────────────
+# ── Step 0: Create a demo employment contract ─────────────────────────────────
 
-print("Création du contrat de démo...")
+print("Creating the demo contract...")
 GenerateDocxTool().forward(
     title="Contrat de Travail — CDI",
     sections=[
@@ -44,42 +48,44 @@ GenerateDocxTool().forward(
     ],
     output_path=str(WORK_DIR / "contrat_original.docx"),
 )
-print(f"✓ Contrat créé : {WORK_DIR}/contrat_original.docx")
+print(f"✓ Contract created: {WORK_DIR}/contrat_original.docx")
 
 
-# ── Étape 1 : Analyse juridique du contrat ────────────────────────────────────
+# ── Step 1: Legal analysis of the contract ────────────────────────────────────
 
 print("\n" + "=" * 70)
-print("Analyse juridique du contrat")
+print("Legal analysis of the contract")
 print("=" * 70)
 
-# Option A : Sans MCP (analyse uniquement basée sur le document)
-agent_doc = LegalDocumentAgent(model=model, legal_domain="droit social")
+# Option A: Without MCP (analysis based on the document alone)
+agent_doc = LegalDocumentAgent(model=model, jurisdiction="France", legal_domain="employment law")
 analysis  = agent_doc.analyze(
     str(WORK_DIR / "contrat_original.docx"),
     question=(
-        "Identifie les clauses potentiellement nulles ou abusives. "
-        "Focus sur la clause de non-concurrence : est-elle valide en droit français ?"
+        "Identify potentially void or unfair clauses. "
+        "Focus on the non-compete clause: is it valid under French law?"
     ),
 )
 print(analysis)
 
-# Résultat attendu :
-# ❌ Clause de non-concurrence INVALIDE :
-#    - Durée excessive (5 ans > pratique de marché 1-2 ans)
-#    - Absence totale de contrepartie financière (nullité de plein droit, Soc. 10 juill. 2002)
-#    - Périmètre géographique illimité (non justifié)
-# ❌ Période d'essai cadre : 4 mois max (L1221-19) — 6 mois est illégal sans accord de branche
-# → Citations jurisprudentielles si MCP branché
+# Expected result:
+# ❌ INVALID non-compete clause:
+#    - Excessive duration (5 years > 1-2 year market practice)
+#    - Total absence of financial consideration (void as a matter of law,
+#      per 2002 case law)
+#    - Unlimited geographic scope (unjustified)
+# ❌ Probation clause: 4 months max for management staff (L1221-19) — 6 months is unlawful
+#    without a collective bargaining agreement
+# → Case law citations if MCP is plugged in
 
 
-# ── Étape 2 : Révision avec tracked changes ───────────────────────────────────
+# ── Step 2: Revision with tracked changes ─────────────────────────────────────
 
 print("\n" + "=" * 70)
-print("Révision avec suivi des modifications (Accept/Reject)")
+print("Revision with tracked changes (Accept/Reject)")
 print("=" * 70)
 
-# Option B : Avec MCP pour citer la jurisprudence dans les commentaires
+# Option B: With MCP to cite case law in the change comments
 API_KEY = os.environ.get("SMARTLAWYER_API_KEY", "")
 
 if API_KEY:
@@ -88,22 +94,24 @@ if API_KEY:
         agent_review = LegalDocumentAgent(
             tools        = _default_document_tools() + list(legal_tools),
             model        = model,
-            legal_domain = "droit social",
+            jurisdiction = "France",
+            legal_domain = "employment law",
         )
         review_result = agent_review.review(
             str(WORK_DIR / "contrat_original.docx"),
             instructions=(
-                "Corriger la clause de non-concurrence article 3 : "
-                "1. Réduire la durée à 12 mois maximum "
-                "2. Limiter le périmètre à la région Île-de-France "
-                "3. Ajouter une contrepartie financière de 25% du salaire brut mensuel "
-                "Citer l'arrêt Soc. 10 juillet 2002 dans le motif de modification. "
-                "Corriger aussi la période d'essai article 4 : maximum légal 4 mois cadres (L1221-19)."
+                "Fix the non-compete clause in article 3: "
+                "1. Reduce the duration to 12 months maximum "
+                "2. Limit the scope to the Île-de-France region "
+                "3. Add a financial consideration of 25% of monthly gross salary "
+                "Cite the July 10, 2002 decision in the reason for the change. "
+                "Also fix the probation period in article 4: legal maximum 4 months "
+                "for management staff (L1221-19)."
             ),
             output_path=str(WORK_DIR / "contrat_revised.docx"),
         )
 else:
-    # Sans MCP — révision directe par les edits
+    # Without MCP — direct revision via edits
     result = TrackedChangesTool().forward(
         input_path=str(WORK_DIR / "contrat_original.docx"),
         edits=[
@@ -112,28 +120,28 @@ else:
                 "replace": "12 mois",
                 "context_before": "durée de ",
                 "context_after":  "\n",
-                "reason":  "Durée excessive — pratique : 1-2 ans max (Soc. 2002)",
+                "reason":  "Excessive duration — market practice: 1-2 years max (2002 case law)",
             },
             {
                 "find":    "territoire national et international",
                 "replace": "région Île-de-France",
                 "context_before": "sur l'ensemble du ",
-                "reason":  "Périmètre géographique non justifié — nullité probable",
+                "reason":  "Unjustified geographic scope — likely void",
             },
             {
                 "find":    "Aucune contrepartie financière n'est prévue à ce titre.",
                 "replace": (
                     "En contrepartie, le salarié percevra une indemnité mensuelle "
                     "égale à 25% de son salaire brut mensuel pendant toute la durée "
-                    "de la clause (Soc. 10 juill. 2002, n°00-45135)."
+                    "de la clause (Cass. soc., 10 juill. 2002, n°00-45135)."
                 ),
-                "reason":  "OBLIGATOIRE — absence de contrepartie = nullité de plein droit",
+                "reason":  "MANDATORY — absence of consideration = void as a matter of law",
             },
             {
                 "find":    "6 mois, renouvelable une fois",
                 "replace": "4 mois",
                 "context_before": "fixée à ",
-                "reason":  "L1221-19 : maximum légal 4 mois pour cadres",
+                "reason":  "L1221-19: legal maximum of 4 months for management staff",
             },
         ],
         output_path=str(WORK_DIR / "contrat_revised.docx"),
@@ -141,11 +149,11 @@ else:
     )
     print(result)
 
-print(f"\n✓ Ouvrir {WORK_DIR}/contrat_revised.docx dans Word pour Accept/Reject")
+print(f"\n✓ Open {WORK_DIR}/contrat_revised.docx in Word to Accept/Reject")
 
-# Résultat attendu dans le fichier :
-# - "5 ans" barré en rouge → "12 mois" en bleu souligné
-# - "territoire national et international" barré → "région Île-de-France" inséré
-# - Phrase contrepartie financière insérée avec jurisprudence
-# - "6 mois, renouvelable une fois" barré → "4 mois"
-# Chaque modification acceptée/rejetée indépendamment par l'avocat
+# Expected result in the file:
+# - "5 ans" struck through in red → "12 mois" inserted underlined in blue
+# - "territoire national et international" struck through → "région Île-de-France" inserted
+# - Financial consideration sentence inserted with case law citation
+# - "6 mois, renouvelable une fois" struck through → "4 mois"
+# Each change accepted/rejected independently by the lawyer

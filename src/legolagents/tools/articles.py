@@ -1,10 +1,10 @@
 """
 legolagents.tools.articles
 ──────────────────────────
-Tools abstraits pour les articles de loi.
+Abstract tools for statutes and legal codes.
 
-Toute analyse jurisprudentielle doit être croisée avec le texte légal.
-Ces tools donnent accès aux codes et articles applicables.
+Any case law analysis must be cross-referenced with the legal text.
+These tools give access to the applicable codes and articles.
 """
 
 from __future__ import annotations
@@ -14,7 +14,8 @@ from abc import abstractmethod
 from .base import LegalTool
 
 
-# Aliases courants pour les noms de codes français
+# Common aliases for French legal code names
+# (kept in French: these are the actual proper names of French codes)
 CODE_ALIASES: dict[str, str] = {
     "travail":        "Code du travail",
     "civil":          "Code civil",
@@ -32,32 +33,32 @@ CODE_ALIASES: dict[str, str] = {
 
 
 def normalize_code_name(code: str) -> str:
-    """Normalise un nom de code juridique (alias → nom complet)."""
+    """Normalize a legal code name (alias → full name)."""
     return CODE_ALIASES.get(code.strip().lower(), code)
 
 
 class GetArticleTool(LegalTool):
     """
-    Récupère le contenu d'un article de loi précis.
+    Retrieves the content of a specific statute article.
     """
 
     name = "get_article"
     description = (
-        "Récupère le texte complet d'un article de loi. "
-        "Indispensable pour croiser la jurisprudence avec le texte légal applicable. "
-        "Toujours vérifier la version en vigueur."
+        "Retrieves the full text of a statute article. "
+        "Essential for cross-referencing case law with the applicable legal text. "
+        "Always check the version currently in force."
     )
     inputs = {
         "code": {
             "type": "string",
             "description": (
-                "Nom du code (ex: 'Code du travail', 'Code civil', 'Code de commerce'). "
-                "Alias acceptés : 'travail', 'civil', 'commerce', 'pénal'."
+                "Name of the code (e.g. 'Code du travail', 'Code civil', 'Code de commerce'). "
+                "Accepted aliases: 'travail', 'civil', 'commerce', 'pénal'."
             ),
         },
         "article": {
             "type": "string",
-            "description": "Numéro de l'article (ex: 'L1235-3', '1240', 'R4121-1')",
+            "description": "Article number (e.g. 'L1235-3', '1240', 'R4121-1')",
         },
     }
     output_type = "string"
@@ -78,38 +79,38 @@ class GetArticleTool(LegalTool):
         ref = self.fmt_article(code=code, numero=article, url=url)
         lines = [ref]
         if version_date:
-            lines.append(f"*Version en vigueur au {self.fmt_date(version_date)}*")
+            lines.append(f"*Version in force as of {self.fmt_date(version_date)}*")
         lines.append("")
         lines.append(content[:3000])
         if url:
-            lines.append(f"\n🔗 [Consulter sur SmartLawyer]({url})")
+            lines.append(f"\n🔗 [View on SmartLawyer]({url})")
         return "\n".join(lines)
 
 
 class SearchArticlesTool(LegalTool):
     """
-    Recherche des articles de loi par thème (recherche sémantique).
+    Searches statute articles by topic (semantic search).
     """
 
     name = "search_articles"
     description = (
-        "Recherche des articles de loi par thème ou concept juridique. "
-        "Retourne les articles les plus pertinents avec leur contenu. "
-        "Utiliser pour trouver le fondement textuel d'une règle jurisprudentielle."
+        "Searches statute articles by topic or legal concept. "
+        "Returns the most relevant articles with their content. "
+        "Use to find the textual basis of a case law rule."
     )
     inputs = {
         "query": {
             "type": "string",
-            "description": "Thème ou concept (ex: 'indemnité licenciement barème Macron')",
+            "description": "Topic or concept (e.g. 'severance pay Macron scale')",
         },
         "code": {
             "type": "string",
-            "description": "Restreindre à un code précis (optionnel)",
+            "description": "Restrict to a specific code (optional)",
             "nullable": True,
         },
         "limit": {
             "type": "integer",
-            "description": "Nombre de résultats (défaut 5)",
+            "description": "Number of results (default 5)",
             "nullable": True,
         },
     }
@@ -121,8 +122,8 @@ class SearchArticlesTool(LegalTool):
 
     def format_articles(self, results: list[dict]) -> str:
         if not results:
-            return "Aucun article trouvé pour cette requête."
-        lines = [f"**{len(results)} article(s) trouvé(s) :**\n"]
+            return "No article found for this query."
+        lines = [f"**{len(results)} article(s) found:**\n"]
         for r in results:
             code    = r.get("code", "")
             numero  = r.get("numero", r.get("article", ""))
