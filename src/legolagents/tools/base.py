@@ -1,13 +1,13 @@
 """
 legolagents.tools.base
 ─────────────────────
-LegalTool — base class pour tous les tools juridiques.
+LegalTool — base class for all legal tools.
 
-Apporte par rapport à smolagents.Tool :
-  - Attributs de domaine (jurisdiction, legal_domain)
-  - Helpers de formatage citations FR
-  - run_async() — bridge sync/async propre
-  - Niveau de certitude sur les résultats
+Adds on top of smolagents.Tool:
+  - Domain attributes (jurisdiction, legal_domain)
+  - Citation formatting helpers
+  - run_async() — clean sync/async bridge
+  - Certainty level on results
 """
 
 from __future__ import annotations
@@ -22,23 +22,23 @@ from smolagents import Tool
 
 
 class Certainty(str, Enum):
-    ESTABLISHED = "established"  # jurisprudence constante, publiée, non superseded
-    TRENDING    = "trending"     # arrêts récents, pas encore constants
-    ISOLATED    = "isolated"     # arrêt unique ou minoritaire
-    SUPERSEDED  = "superseded"   # ne plus citer comme droit positif
+    ESTABLISHED = "established"  # settled, published case law, non-superseded
+    TRENDING    = "trending"     # recent decisions, not yet settled
+    ISOLATED    = "isolated"     # single or minority decision
+    SUPERSEDED  = "superseded"   # no longer citable as positive law
 
     def label(self) -> str:
         return {
-            self.ESTABLISHED: "✅ Droit établi",
-            self.TRENDING:    "⚡ Tendance",
-            self.ISOLATED:    "⚠️ Isolé",
+            self.ESTABLISHED: "✅ Established law",
+            self.TRENDING:    "⚡ Trending",
+            self.ISOLATED:    "⚠️ Isolated",
             self.SUPERSEDED:  "❌ Superseded",
         }[self]
 
 
 @dataclass
 class LegalCitation:
-    """Représentation normalisée d'une citation juridique."""
+    """Normalized representation of a legal citation."""
     number: str
     date: str
     jurisdiction: str
@@ -64,7 +64,7 @@ class LegalCitation:
 
 @dataclass
 class LegalToolResult:
-    """Résultat structuré retourné par un LegalTool."""
+    """Structured result returned by a LegalTool."""
     content: str
     citations: list[LegalCitation] = field(default_factory=list)
     certainty: Certainty = Certainty.ESTABLISHED
@@ -76,19 +76,19 @@ class LegalToolResult:
 
 class LegalTool(Tool):
     """
-    Base class pour tous les tools juridiques.
+    Base class for all legal tools.
 
-    Toutes les sous-classes qui font des appels réseau doivent implémenter
-    forward() de manière synchrone et utiliser self.run_async() pour les
-    coroutines. Ne pas réimplémenter __call__.
+    Any subclass that makes network calls must implement forward()
+    synchronously and use self.run_async() for coroutines. Do not
+    reimplement __call__.
     """
 
-    # Sous-classes peuvent surcharger
-    jurisdiction: str = "FR"
+    # Subclasses may override
+    jurisdiction: str = ""
     legal_domain: str = ""
     async_timeout: int = 60
 
-    # ── Formatage ──────────────────────────────────────────────────────────────
+    # ── Formatting ─────────────────────────────────────────────────────────────
 
     @staticmethod
     def fmt_decision(
@@ -100,7 +100,7 @@ class LegalTool(Tool):
         url: str = "",
         solution: str = "",
     ) -> str:
-        """Formate une décision en Markdown avec lien optionnel."""
+        """Format a decision as Markdown with an optional link."""
         date_short = (date or "")[:10]
         header = f"{jurisdiction} · {chamber} · {date_short} · n°{number}"
         link = f"[{header}]({url})" if url else f"**{header}**"
@@ -108,13 +108,13 @@ class LegalTool(Tool):
 
     @staticmethod
     def fmt_article(*, code: str, numero: str, url: str = "") -> str:
-        """Formate une référence d'article de loi."""
+        """Format a statute reference."""
         ref = f"Art. {numero} {code}"
         return f"[{ref}]({url})" if url else f"**{ref}**"
 
     @staticmethod
     def fmt_date(raw: str) -> str:
-        """Normalise une date au format YYYY-MM-DD → DD/MM/YYYY."""
+        """Normalize a date from YYYY-MM-DD → DD/MM/YYYY."""
         if not raw or len(raw) < 10:
             return raw or ""
         try:
@@ -125,7 +125,7 @@ class LegalTool(Tool):
 
     @staticmethod
     def certainty_from_payload(payload: dict) -> Certainty:
-        """Déduit le niveau de certitude depuis les métadonnées d'un arrêt."""
+        """Infer the certainty level from a decision's metadata."""
         if payload.get("superseded_by"):
             return Certainty.SUPERSEDED
         score = payload.get("importance_score") or 0
@@ -141,30 +141,30 @@ class LegalTool(Tool):
 
     def run_async(self, coro: Coroutine) -> Any:
         """
-        Exécute une coroutine depuis forward() (contexte synchrone).
+        Run a coroutine from forward() (synchronous context).
 
-        Détecte si une event loop tourne déjà (FastAPI, Chainlit) et
-        utilise un thread isolé pour éviter les conflits.
+        Detects whether an event loop is already running (FastAPI, Chainlit)
+        and uses an isolated thread to avoid conflicts.
 
-        IMPORTANT : la coroutine doit être créée DANS le thread pour éviter
-        les Future cross-loop. On passe donc soit une coroutine (cas sans loop),
-        soit on la wrape dans asyncio.run directement.
+        IMPORTANT: the coroutine must be created INSIDE the thread to avoid
+        cross-loop Futures. So we either pass a coroutine (no-loop case), or
+        wrap it directly in asyncio.run.
         """
         try:
             asyncio.get_running_loop()
-            # Event loop active → thread séparé avec sa propre loop
-            # On wrappe dans une fonction pour que la coroutine soit
-            # entièrement exécutée dans le contexte du nouveau thread
+            # Active event loop → separate thread with its own loop
+            # Wrapped in a function so the coroutine is fully executed
+            # within the new thread's context
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
                 fut = ex.submit(self._run_in_new_loop, coro)
                 return fut.result(timeout=self.async_timeout)
         except RuntimeError:
-            # Pas de loop active → on peut lancer directement
+            # No active loop → can run directly
             return asyncio.run(coro)
 
     @staticmethod
     def _run_in_new_loop(coro: Coroutine) -> Any:
-        """Crée une loop propre et exécute la coroutine dedans."""
+        """Create a clean loop and run the coroutine inside it."""
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
@@ -177,5 +177,5 @@ class LegalTool(Tool):
 
     def _require(self, value: Any, name: str) -> Any:
         if value is None:
-            raise ValueError(f"[{self.name}] Paramètre requis manquant : {name}")
+            raise ValueError(f"[{self.name}] Missing required parameter: {name}")
         return value

@@ -1,13 +1,13 @@
 """
 legolagents.tools.retrieval
 ───────────────────────────
-Tools abstraits de recherche jurisprudentielle.
+Abstract case law research tools.
 
-Ces classes définissent l'interface et le formatage des résultats.
-Les implémentations concrètes (Qdrant, Elasticsearch, API REST…)
-sont fournies par le projet consommateur (ex: SmartLawyer).
+These classes define the interface and result formatting.
+Concrete implementations (Qdrant, Elasticsearch, REST API…) are provided
+by the consuming project (e.g. SmartLawyer).
 
-Exemple d'implémentation :
+Example implementation:
 
     from legolagents.tools.retrieval import JurisprudenceSearchTool
 
@@ -18,7 +18,7 @@ Exemple d'implémentation :
             self.embed  = embed_fn
 
         def forward(self, query, domaine="", limit=5):
-            # ... appel Qdrant ...
+            # ... call Qdrant ...
             return self.format_results(points)
 """
 
@@ -31,29 +31,29 @@ from .base import Certainty, LegalCitation, LegalTool
 
 class JurisprudenceSearchTool(LegalTool):
     """
-    Recherche sémantique dans la base jurisprudentielle.
-    À surcharger avec l'implémentation concrète.
+    Semantic search in the case law database.
+    Override with a concrete implementation.
     """
 
     name = "search_jurisprudences"
     description = (
-        "Recherche des décisions de justice par requête en langage naturel. "
-        "Retourne les arrêts les plus pertinents avec leurs métadonnées. "
-        "Utiliser pour trouver des précédents sur un problème juridique."
+        "Searches court decisions by natural language query. "
+        "Returns the most relevant decisions with their metadata. "
+        "Use to find precedents on a legal issue."
     )
     inputs = {
         "query": {
             "type": "string",
-            "description": "Requête juridique en langage naturel (ex: 'rupture abusive promesse de vente')",
+            "description": "Legal query in natural language (e.g. 'wrongful termination sale agreement')",
         },
         "domaine": {
             "type": "string",
-            "description": "Filtrer par domaine (ex: 'droit social', 'droit civil'). Laisser vide pour tous.",
+            "description": "Filter by domain (e.g. 'employment law', 'civil law'). Leave empty for all.",
             "nullable": True,
         },
         "limit": {
             "type": "integer",
-            "description": "Nombre de résultats (max 10, défaut 5)",
+            "description": "Number of results (max 10, default 5)",
             "nullable": True,
         },
     }
@@ -64,11 +64,11 @@ class JurisprudenceSearchTool(LegalTool):
         raise NotImplementedError
 
     def format_results(self, hits: list[dict], base_url: str = "") -> str:
-        """Helper de formatage standard pour les résultats de recherche."""
+        """Standard formatting helper for search results."""
         if not hits:
-            return "Aucune décision trouvée pour cette requête."
+            return "No decision found for this query."
 
-        lines = [f"**{len(hits)} décision(s) trouvée(s) :**\n"]
+        lines = [f"**{len(hits)} decision(s) found:**\n"]
         for h in hits:
             certainty = self.certainty_from_payload(h)
             citation = LegalCitation(
@@ -92,24 +92,24 @@ class JurisprudenceSearchTool(LegalTool):
 
 class FindLandmarkCasesTool(LegalTool):
     """
-    Trouve les grands arrêts d'un domaine (arrêts de principe).
-    Classés par score d'importance jurisprudentielle.
+    Finds the landmark decisions of a domain (leading cases).
+    Ranked by case law importance score.
     """
 
     name = "find_landmark_cases"
     description = (
-        "Trouve les arrêts de principe (grands arrêts) d'un domaine juridique, "
-        "classés par importance jurisprudentielle. "
-        "Utiliser en premier dans toute recherche pour identifier le droit établi."
+        "Finds the landmark decisions (leading cases) of a legal domain, "
+        "ranked by case law importance. "
+        "Use first in any research to identify established law."
     )
     inputs = {
         "domaine": {
             "type": "string",
-            "description": "Domaine juridique (ex: 'droit social', 'droit civil')",
+            "description": "Legal domain (e.g. 'employment law', 'civil law')",
         },
         "limit": {
             "type": "integer",
-            "description": "Nombre de résultats (max 10, défaut 5)",
+            "description": "Number of results (max 10, default 5)",
             "nullable": True,
         },
     }
@@ -122,29 +122,29 @@ class FindLandmarkCasesTool(LegalTool):
 
 class FindRelatedCasesTool(LegalTool):
     """
-    Trouve les décisions liées à un arrêt via le Legal Graph.
-    Navigation par citations directes (cite / cité par).
+    Finds decisions related to a decision via the Legal Graph.
+    Navigation through direct citations (cites / cited by).
     """
 
     name = "find_related_cases"
     description = (
-        "Trouve les arrêts liés à une décision via le graphe de citations. "
-        "Retourne les arrêts qui citent cette décision et ceux qu'elle cite. "
-        "Utiliser pour traverser le Legal Graph et comprendre la lignée jurisprudentielle."
+        "Finds decisions related to a decision via the citation graph. "
+        "Returns decisions that cite this decision and those it cites. "
+        "Use to traverse the Legal Graph and understand the case law lineage."
     )
     inputs = {
         "decision_id": {
             "type": "string",
-            "description": "Identifiant de la décision (UUID ou slug)",
+            "description": "Decision identifier (UUID or slug)",
         },
         "direction": {
             "type": "string",
-            "description": "'citing' (arrêts qui citent), 'cited' (arrêts cités), 'both' (défaut)",
+            "description": "'citing' (decisions that cite), 'cited' (decisions cited), 'both' (default)",
             "nullable": True,
         },
         "limit": {
             "type": "integer",
-            "description": "Nombre de résultats par direction (défaut 8)",
+            "description": "Number of results per direction (default 8)",
             "nullable": True,
         },
     }
@@ -157,20 +157,20 @@ class FindRelatedCasesTool(LegalTool):
 
 class CheckDecisionValidityTool(LegalTool):
     """
-    Vérifie si une décision est toujours en vigueur (non superseded/renversée).
-    À appeler SYSTÉMATIQUEMENT avant de citer un arrêt.
+    Checks whether a decision is still in force (not superseded/overturned).
+    Must be called SYSTEMATICALLY before citing a decision.
     """
 
     name = "check_decision_validity"
     description = (
-        "Vérifie si une décision est toujours valide (non renversée/superseded). "
-        "OBLIGATOIRE avant de citer un arrêt comme droit positif. "
-        "Retourne le statut et l'arrêt remplaçant si applicable."
+        "Checks whether a decision is still valid (not overturned/superseded). "
+        "MANDATORY before citing a decision as positive law. "
+        "Returns the status and the replacing decision if applicable."
     )
     inputs = {
         "decision_id": {
             "type": "string",
-            "description": "Identifiant de la décision à vérifier",
+            "description": "Identifier of the decision to check",
         },
     }
     output_type = "string"
@@ -183,38 +183,38 @@ class CheckDecisionValidityTool(LegalTool):
         superseded = payload.get("superseded_by")
         number = payload.get("number", "?")
         if not superseded:
-            return f"✅ **n°{number}** — Décision toujours valide, non renversée."
-        lines = [f"❌ **n°{number}** — Cette décision a été **renversée** :"]
+            return f"✅ **n°{number}** — Decision still valid, not overturned."
+        lines = [f"❌ **n°{number}** — This decision has been **overturned**:"]
         if isinstance(superseded, dict):
             sup_num  = superseded.get("number", "")
             sup_date = (superseded.get("decision_date") or "")[:10]
-            lines.append(f"  → Remplacée par n°{sup_num} ({sup_date})")
-            lines.append("  ⚠️ Ne pas citer cet arrêt comme droit positif.")
+            lines.append(f"  → Replaced by n°{sup_num} ({sup_date})")
+            lines.append("  ⚠️ Do not cite this decision as positive law.")
         return "\n".join(lines)
 
 
 class SearchByArticleTool(LegalTool):
     """
-    Trouve les décisions qui visent un article de loi précis.
+    Finds decisions that reference a specific statute article.
     """
 
     name = "search_by_article"
     description = (
-        "Trouve les décisions de justice qui appliquent ou interprètent "
-        "un article de loi précis. Utile pour voir comment un texte est appliqué."
+        "Finds court decisions that apply or interpret a specific statute "
+        "article. Useful to see how a text is applied in practice."
     )
     inputs = {
         "code": {
             "type": "string",
-            "description": "Nom du code (ex: 'Code du travail', 'Code civil')",
+            "description": "Name of the code (e.g. 'Code du travail', 'Code civil')",
         },
         "article": {
             "type": "string",
-            "description": "Numéro de l'article (ex: 'L1235-3', '1240')",
+            "description": "Article number (e.g. 'L1235-3', '1240')",
         },
         "limit": {
             "type": "integer",
-            "description": "Nombre de résultats (défaut 5)",
+            "description": "Number of results (default 5)",
             "nullable": True,
         },
     }

@@ -1,10 +1,10 @@
 """
 legolagents.agents.research
 ────────────────────────────
-LegalResearchAgent — agent de recherche jurisprudentielle.
+LegalResearchAgent — case law research agent.
 
-Point d'entrée : une question juridique (pas une fiche).
-Stratégie : landmarks → search → validity → graph → articles → synthèse.
+Entry point: an open legal question (not a case brief).
+Strategy: landmarks → search → validity → graph → statutes → synthesis.
 """
 
 from __future__ import annotations
@@ -18,32 +18,32 @@ from .base import LegalAgent
 
 class LegalResearchAgent(LegalAgent):
     """
-    Agent spécialisé dans la recherche jurisprudentielle.
+    Agent specialized in case law research.
 
-    Contrairement au FicheAnalystAgent qui part d'un arrêt précis,
-    le LegalResearchAgent part d'une question ouverte et construit
-    une réponse en naviguant la base de données jurisprudentielle.
+    Unlike FicheAnalystAgent, which starts from a specific decision,
+    LegalResearchAgent starts from an open question and builds an answer
+    by navigating the case law database.
 
-    Workflow intégré :
-    1. Identifier les grands arrêts du domaine
-    2. Recherche sémantique ciblée
-    3. Vérification validité des arrêts retenus
-    4. Traversal du Legal Graph
-    5. Identification des articles de loi
-    6. Synthèse avec niveaux de certitude
+    Built-in workflow:
+    1. Identify the landmark decisions in the domain
+    2. Targeted semantic search
+    3. Validity check on the decisions retained
+    4. Legal Graph traversal
+    5. Identification of applicable statutes
+    6. Synthesis with certainty levels
 
     Parameters
     ----------
     tools : list[Tool]
-        Doit inclure : JurisprudenceSearchTool, FindLandmarkCasesTool,
+        Should include: JurisprudenceSearchTool, FindLandmarkCasesTool,
         CheckDecisionValidityTool, GetLegalGraphTool, GetArticleTool.
     model : smolagents.Model
     jurisdiction : str
-        Juridiction de référence (ex: "France"), transmise à LegalAgent.
+        Reference jurisdiction (e.g. "France"), passed to LegalAgent.
     legal_domain : str
-        Domaine juridique (restreint les recherches si fourni)
+        Legal domain (narrows the research if provided)
     depth : str
-        "shallow" (2-3 étapes) | "standard" (défaut) | "deep" (exhaustif)
+        "shallow" (2-3 steps) | "standard" (default) | "deep" (exhaustive)
     """
 
     DEPTH_STEPS = {
@@ -77,20 +77,20 @@ class LegalResearchAgent(LegalAgent):
 
     def run(self, question: str, **kwargs: Any) -> Any:
         """
-        Recherche jurisprudentielle sur une question de droit.
+        Research case law for a legal question.
 
         Parameters
         ----------
         question : str
-            Question juridique en langage naturel.
-            Ex: "Quelle est la jurisprudence sur la rupture abusive de promesse de vente ?"
+            Legal question in natural language.
+            Ex: "What is the case law on wrongful termination of a sale agreement?"
         """
         task = question
         if self.depth == "deep":
             task = (
                 f"{question}\n\n"
-                "INSTRUCTION : Recherche exhaustive. "
-                "Couvrir les revirements, les divergences entre chambres, "
-                "et les évolutions législatives récentes."
+                "INSTRUCTION: Exhaustive research. "
+                "Cover reversals, divergences between divisions, "
+                "and recent legislative developments."
             )
         return super().run(task, **kwargs)

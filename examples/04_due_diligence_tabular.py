@@ -1,9 +1,13 @@
 """
-Exemple 4 — Due diligence tabulaire : comparer N contrats sur M critères
+Example 4 — Tabular due diligence: comparing N documents across M criteria
 ══════════════════════════════════════════════════════════════════════════
 
-Use case : audit de 3 baux commerciaux pour identifier les risques
-avant une acquisition immobilière. Rapport Word en sortie.
+Use case: audit 3 commercial leases to identify risks ahead of a real
+estate acquisition. Word report as output.
+
+Note: this example uses French commercial leases (Commercial Code
+references) to demonstrate the workflow — TabularAnalysisTool and
+LegalDocumentAgent themselves are jurisdiction-agnostic.
 """
 
 from pathlib import Path
@@ -17,9 +21,9 @@ WORK_DIR = Path("/tmp/legolagents_demo")
 WORK_DIR.mkdir(exist_ok=True)
 
 
-# ── Créer 3 baux de démo ──────────────────────────────────────────────────────
+# ── Create 3 demo leases ───────────────────────────────────────────────────────
 
-print("Création des baux de démo...")
+print("Creating the demo leases...")
 gen = GenerateDocxTool()
 
 gen.forward(
@@ -77,32 +81,32 @@ gen.forward(
     output_path=str(WORK_DIR / "bail_C.docx"),
 )
 
-print("✓ 3 baux créés")
+print("✓ 3 leases created")
 
 
-# ── Option A : Analyse tabulaire directe (rapide, sans LLM par cellule) ───────
+# ── Option A: Direct tabular analysis (fast, no per-cell LLM call) ────────────
 
 print("\n" + "=" * 70)
-print("Analyse tabulaire des 3 baux")
+print("Tabular analysis of the 3 leases")
 print("=" * 70)
 
 matrix = TabularAnalysisTool().forward(
     documents=[
-        {"path": str(WORK_DIR / "bail_A.docx"), "label": "Local A (Mode)"},
-        {"path": str(WORK_DIR / "bail_B.docx"), "label": "Local B (Resto)"},
-        {"path": str(WORK_DIR / "bail_C.docx"), "label": "Local C (Pharma)"},
+        {"path": str(WORK_DIR / "bail_A.docx"), "label": "Unit A (Fashion)"},
+        {"path": str(WORK_DIR / "bail_B.docx"), "label": "Unit B (Restaurant)"},
+        {"path": str(WORK_DIR / "bail_C.docx"), "label": "Unit C (Pharmacy)"},
     ],
     columns=[
-        {"name": "Durée",        "question": "Quelle est la durée du bail ?"},
-        {"name": "Loyer",        "question": "Quel est le loyer annuel et l'indice d'indexation ?",
-         "flag_if": "ICC"},  # ICC n'est plus adapté aux baux commerciaux
-        {"name": "Dépôt",        "question": "Quel est le montant du dépôt de garantie ?",
-         "flag_if": "6 mois"},  # > 2 termes → intérêts obligatoires L145-15
-        {"name": "Charges",      "question": "Qui supporte les charges et la taxe foncière ?",
+        {"name": "Term",        "question": "What is the term of the lease?"},
+        {"name": "Rent",        "question": "What is the annual rent and the indexation index?",
+         "flag_if": "ICC"},  # ICC is no longer suited to commercial leases
+        {"name": "Deposit",     "question": "What is the amount of the security deposit?",
+         "flag_if": "6 mois"},  # > 2 terms → mandatory interest under L145-15
+        {"name": "Charges",     "question": "Who bears the charges and property tax?",
          "flag_if": "taxe foncière"},
-        {"name": "Congé triennal", "question": "Le congé triennal est-il prévu ?",
+        {"name": "Triennial notice", "question": "Is triennial termination available?",
          "flag_if": "Pas"},
-        {"name": "Clause résolutoire", "question": "Quelles sont les conditions de la clause résolutoire ?",
+        {"name": "Termination clause", "question": "What are the conditions of the termination clause?",
          "flag_if": "immédiate"},
     ],
     output_path=str(WORK_DIR / "due_diligence_baux.docx"),
@@ -110,25 +114,25 @@ matrix = TabularAnalysisTool().forward(
 print(matrix)
 
 
-# ── Option B : Agent documentaire + playbook bail_commercial ──────────────────
+# ── Option B: Document agent + bail_commercial playbook ──────────────────────
 
 print("\n" + "=" * 70)
-print("Analyse approfondie via playbook (Local B — plus de risques)")
+print("In-depth analysis via playbook (Unit B — most risks)")
 print("=" * 70)
 
 playbook = PlaybookLibrary.get("bail_commercial")
 prompt   = playbook.to_prompt(output_path=str(WORK_DIR / "analyse_bail_B.docx"))
 
-agent = LegalDocumentAgent(model=model, legal_domain="droit commercial")
-result = agent.run(f"Document : {WORK_DIR}/bail_B.docx\n\n{prompt}")
+agent = LegalDocumentAgent(model=model, jurisdiction="France", legal_domain="commercial law")
+result = agent.run(f"Document: {WORK_DIR}/bail_B.docx\n\n{prompt}")
 print(result)
 
-# Résultat attendu pour le Local B :
-# ⚠️ Indexation ICC — non conforme, ILC ou ILAT requis (L145-34)
-# ⚠️ Taxe foncière à la charge du preneur — exclue par décret 3 nov. 2014
-# ⚠️ Clause résolutoire immédiate sans mise en demeure — potentiellement nulle
-# ⚠️ Pas de congé triennal — droit impératif L145-4 (non-négociable)
-# Le bail B a 4 clauses potentiellement nulles — risque élevé pour l'acquéreur
+# Expected result for Unit B:
+# ⚠️ ICC indexation — non-compliant, ILC or ILAT required (L145-34)
+# ⚠️ Property tax charged to the tenant — excluded by the Nov. 3, 2014 decree
+# ⚠️ Immediate termination clause without formal notice — potentially void
+# ⚠️ No triennial termination option — mandatory right under L145-4 (non-negotiable)
+# Lease B has 4 potentially void clauses — high risk for the buyer
 
-print(f"\n✓ Rapport : {WORK_DIR}/due_diligence_baux.docx")
-print(f"✓ Analyse détaillée bail B : {WORK_DIR}/analyse_bail_B.docx")
+print(f"\n✓ Report: {WORK_DIR}/due_diligence_baux.docx")
+print(f"✓ Detailed analysis of lease B: {WORK_DIR}/analyse_bail_B.docx")

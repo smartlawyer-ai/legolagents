@@ -1,10 +1,10 @@
 """
 legolagents.agents.fiche
 ────────────────────────
-FicheAnalystAgent — agent d'analyse d'une décision de justice.
+FicheAnalystAgent — court decision (case brief) analysis agent.
 
-Point d'entrée : une fiche d'arrêt (dict ou texte de contexte).
-Situe la décision dans la jurisprudence. Ne décrit pas — analyse.
+Entry point: a case brief (dict or text context).
+Situates the decision within case law. Doesn't describe — analyzes.
 """
 
 from __future__ import annotations
@@ -18,10 +18,10 @@ from .base import LegalAgent
 
 def _build_fiche_context(fiche: dict) -> str:
     """
-    Construit le bloc de contexte de la fiche injecté dans le system prompt.
-    Agnostique du format — adapte selon les clés disponibles.
+    Build the case brief context block injected into the system prompt.
+    Format-agnostic — adapts based on the available keys.
     """
-    parts = ["## DÉCISION ANALYSÉE\n"]
+    parts = ["## DECISION ANALYZED\n"]
 
     def _add(label: str, key: str, max_len: int = 0) -> None:
         val = fiche.get(key) or ""
@@ -30,28 +30,28 @@ def _build_fiche_context(fiche: dict) -> str:
         val = str(val)
         if max_len:
             val = val[:max_len]
-        parts.append(f"**{label} :** {val}")
+        parts.append(f"**{label}:** {val}")
 
-    _add("Juridiction",  "jurisdiction")
-    _add("Chambre",      "chamber")
+    _add("Jurisdiction", "jurisdiction")
+    _add("Division",     "chamber")
     _add("Date",         "decision_date")
-    _add("Numéro",       "number")
+    _add("Number",       "number")
     _add("ECLI",         "ecli")
-    _add("Solution",     "solution")
-    _add("Domaine",      "domaine")
-    _add("Sous-domaine", "sous_domaine")
+    _add("Holding",      "solution")
+    _add("Domain",       "domaine")
+    _add("Sub-domain",   "sous_domaine")
     parts.append("")
 
     for key, label in [
-        ("faits",         "### Faits"),
-        ("procedure",     "### Procédure"),
-        ("probleme",      "### Problème de droit"),
-        ("solution_text", "### Solution"),
+        ("faits",         "### Facts"),
+        ("procedure",     "### Procedure"),
+        ("probleme",      "### Legal issue"),
+        ("solution_text", "### Holding"),
     ]:
         if fiche.get(key):
             parts += [label, str(fiche[key])[:1500], ""]
 
-    # Articles visés
+    # Referenced statutes
     articles = fiche.get("articles") or []
     if articles and isinstance(articles, list):
         arts = ", ".join(
@@ -60,17 +60,17 @@ def _build_fiche_context(fiche: dict) -> str:
             if isinstance(a, dict)
         )
         if arts:
-            parts += ["### Articles visés", arts, ""]
+            parts += ["### Referenced statutes", arts, ""]
 
     # Legal Graph basics
     score  = fiche.get("importance_score") or 0
     cited  = fiche.get("cited_by_count") or 0
     superseded = fiche.get("superseded_by")
     parts += [
-        "### Importance jurisprudentielle",
-        f"- Score : {score}/100",
-        f"- Cité par : {cited} décision(s)",
-        f"- Statut : {'⚠️ RENVERSÉ' if superseded else '✅ Valide'}",
+        "### Case law importance",
+        f"- Score: {score}/100",
+        f"- Cited by: {cited} decision(s)",
+        f"- Status: {'⚠️ SUPERSEDED' if superseded else '✅ Valid'}",
         "",
     ]
 
@@ -79,31 +79,32 @@ def _build_fiche_context(fiche: dict) -> str:
 
 class FicheAnalystAgent(LegalAgent):
     """
-    Agent spécialisé dans l'analyse d'une décision de justice précise.
+    Agent specialized in analyzing a specific court decision.
 
-    Contrairement au LegalResearchAgent qui explore librement la base,
-    le FicheAnalystAgent est ancré sur une fiche et répond aux questions
-    en la situant dans le contexte jurisprudentiel global.
+    Unlike LegalResearchAgent, which freely explores the database,
+    FicheAnalystAgent is anchored on a case brief and answers questions
+    by situating it within the broader case law context.
 
-    Il ne décrit pas la fiche (l'utilisateur peut la lire) — il l'analyse :
-    - Sa place dans la jurisprudence (arrêt de principe ? isolé ?)
-    - Sa validité actuelle (toujours en vigueur ?)
-    - Ses liens avec d'autres décisions
-    - Les tensions qu'elle révèle
+    It doesn't describe the case brief (the user can read it) — it
+    analyzes it:
+    - Its place within case law (landmark decision? isolated?)
+    - Its current validity (still in force?)
+    - Its links with other decisions
+    - The tensions it reveals
 
     Parameters
     ----------
     tools : list[Tool]
-        Doit inclure un tool qui expose le contexte de la fiche
-        (ex: SmartLawyerFicheContextTool).
+        Must include a tool that exposes the case brief context
+        (e.g. SmartLawyerFicheContextTool).
     model : smolagents.Model
     fiche : dict | None
-        Données de la fiche. Si fourni, le contexte est injecté dans
-        le system prompt automatiquement.
+        Case brief data. If provided, the context is automatically
+        injected into the system prompt.
     fiche_context : str | None
-        Contexte pré-formaté (alternative à fiche dict).
+        Pre-formatted context (alternative to fiche dict).
     legal_domain : str
-        Domaine juridique — si vide, déduit de fiche["domaine"].
+        Legal domain — if empty, inferred from fiche["domaine"].
     """
 
     def __init__(
@@ -115,7 +116,7 @@ class FicheAnalystAgent(LegalAgent):
         legal_domain: str = "",
         **kwargs: Any,
     ) -> None:
-        # Construire le contexte de la fiche
+        # Build the case brief context
         if fiche and not fiche_context:
             fiche_context = _build_fiche_context(fiche)
             if not legal_domain:

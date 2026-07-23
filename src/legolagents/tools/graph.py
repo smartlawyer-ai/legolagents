@@ -1,15 +1,15 @@
 """
 legolagents.tools.graph
 ───────────────────────
-Tools abstraits de navigation dans le Legal Graph.
+Abstract tools for navigating the Legal Graph.
 
-Le Legal Graph est un graphe de citations entre décisions :
-  - Nœuds : décisions de justice
-  - Arêtes : citations qualifiées (confirme, infirme, applique, distingue…)
-  - Métadonnées : importance_score, cited_by_count, superseded_by
+The Legal Graph is a citation graph between decisions:
+  - Nodes: court decisions
+  - Edges: qualified citations (confirms, overturns, applies, distinguishes…)
+  - Metadata: importance_score, cited_by_count, superseded_by
 
-Ces tools permettent la traversal du graphe — capacité fondamentale
-d'un agent juridique expert.
+These tools enable graph traversal — a fundamental capability of an
+expert legal agent.
 """
 
 from __future__ import annotations
@@ -21,20 +21,20 @@ from .base import LegalTool
 
 class GetLegalGraphTool(LegalTool):
     """
-    Retourne les informations Legal Graph d'une décision :
-    citations émises, citations reçues, score d'importance, statut.
+    Returns the Legal Graph information for a decision:
+    citations made, citations received, importance score, status.
     """
 
     name = "get_legal_graph"
     description = (
-        "Retourne le Legal Graph d'une décision : citations qualifiées, "
-        "score d'importance, nombre de citations reçues, statut (superseded ou non). "
-        "Utiliser pour comprendre la place d'un arrêt dans la jurisprudence."
+        "Returns the Legal Graph of a decision: qualified citations, "
+        "importance score, number of citations received, status (superseded or not). "
+        "Use to understand a decision's place within case law."
     )
     inputs = {
         "decision_id": {
             "type": "string",
-            "description": "Identifiant de la décision",
+            "description": "Decision identifier",
         },
     }
     output_type = "string"
@@ -53,16 +53,16 @@ class GetLegalGraphTool(LegalTool):
 
         lines = [
             f"**Legal Graph — n°{number}**",
-            f"- Score d'importance : {score}/100",
-            f"- Citations reçues  : {cited}",
-            f"- Citations émises  : {citations_emises}",
-            f"- Publication       : {', '.join(pub) if pub else 'non publié'}",
-            f"- Statut            : {'❌ Renversé' if superseded else '✅ Valide'}",
+            f"- Importance score : {score}/100",
+            f"- Citations received : {cited}",
+            f"- Citations made     : {citations_emises}",
+            f"- Publication        : {', '.join(pub) if pub else 'unpublished'}",
+            f"- Status             : {'❌ Superseded' if superseded else '✅ Valid'}",
         ]
 
         caq = payload.get("cite_arrets_qualifies") or []
         if caq:
-            lines.append(f"\n**Citations qualifiées ({len(caq)}) :**")
+            lines.append(f"\n**Qualified citations ({len(caq)}):**")
             for c in caq[:10]:
                 if isinstance(c, dict):
                     rel   = c.get("type_relation", "?")
@@ -75,27 +75,27 @@ class GetLegalGraphTool(LegalTool):
 
 class TraverseGraphTool(LegalTool):
     """
-    Remonte la lignée jurisprudentielle d'une décision.
+    Walks the case law lineage of a decision.
 
-    Traverse le graphe en profondeur pour reconstituer :
-      - La chaîne des revirements (superseded_by → superseded_by → …)
-      - Les arrêts fondateurs qui ont été cités en cascade
+    Traverses the graph in depth to reconstruct:
+      - The chain of reversals (superseded_by → superseded_by → …)
+      - The founding decisions cited in cascade
     """
 
     name = "traverse_legal_graph"
     description = (
-        "Remonte la lignée jurisprudentielle d'une décision sur N niveaux. "
-        "Reconstruit la chaîne des revirements et des arrêts fondateurs. "
-        "Utiliser pour comprendre l'évolution d'une doctrine dans le temps."
+        "Walks the case law lineage of a decision across N levels. "
+        "Reconstructs the chain of reversals and founding decisions. "
+        "Use to understand how a doctrine has evolved over time."
     )
     inputs = {
         "decision_id": {
             "type": "string",
-            "description": "Identifiant de la décision de départ",
+            "description": "Identifier of the starting decision",
         },
         "depth": {
             "type": "integer",
-            "description": "Profondeur de traversal (1-3, défaut 2)",
+            "description": "Traversal depth (1-3, default 2)",
             "nullable": True,
         },
     }
@@ -108,29 +108,29 @@ class TraverseGraphTool(LegalTool):
 
 class FindRevirementsTool(LegalTool):
     """
-    Détecte les revirements de jurisprudence dans un domaine.
-    Un revirement est un arrêt qui contredit explicitement un arrêt antérieur.
+    Detects case law reversals within a domain.
+    A reversal is a decision that explicitly contradicts an earlier one.
     """
 
     name = "find_revirements"
     description = (
-        "Détecte les revirements de jurisprudence (changements de doctrine) "
-        "dans un domaine ou sur un sujet précis. "
-        "Critique pour évaluer la stabilité du droit applicable."
+        "Detects case law reversals (doctrinal shifts) within a domain "
+        "or on a specific topic. "
+        "Critical to assess the stability of the applicable law."
     )
     inputs = {
         "domaine": {
             "type": "string",
-            "description": "Domaine juridique à analyser",
+            "description": "Legal domain to analyze",
         },
         "sujet": {
             "type": "string",
-            "description": "Sujet précis (optionnel, ex: 'barème Macron')",
+            "description": "Specific topic (optional, e.g. 'severance pay scale')",
             "nullable": True,
         },
         "limit": {
             "type": "integer",
-            "description": "Nombre de revirements à retourner (défaut 5)",
+            "description": "Number of reversals to return (default 5)",
             "nullable": True,
         },
     }
@@ -143,20 +143,20 @@ class FindRevirementsTool(LegalTool):
 
 class GetProcedureLineageTool(LegalTool):
     """
-    Retrace le parcours procédural d'une affaire (TI → CA → Cass.).
-    Utile pour comprendre le contexte d'un arrêt de cassation.
+    Retraces the procedural path of a case (first instance → appeal → highest court).
+    Useful to understand the context of a top-court decision.
     """
 
     name = "get_procedure_lineage"
     description = (
-        "Retrace le parcours procédural d'une affaire : "
-        "première instance → appel → cassation. "
-        "Comprendre le contexte procédural d'un arrêt de la Cour de cassation."
+        "Retraces the procedural path of a case: "
+        "first instance → appeal → cassation/highest court. "
+        "Understand the procedural context of a top-court decision."
     )
     inputs = {
         "decision_id": {
             "type": "string",
-            "description": "Identifiant de la décision (généralement un arrêt de cassation)",
+            "description": "Decision identifier (typically a top-court decision)",
         },
     }
     output_type = "string"

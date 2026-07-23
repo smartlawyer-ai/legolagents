@@ -1,19 +1,18 @@
 """
-legolagents — Extension smolagents pour construire des agents juridiques
-═════════════════════════════════════════════════════════════════════════
+legolagents — smolagents extension for building legal agents
+═════════════════════════════════════════════════════════════
 
-Raisonnement juridique structuré (qualification, validité temporelle,
-hiérarchie jurisprudentielle, traversal du graphe de citations…), agnostique
-de juridiction par défaut — précisez `jurisdiction` / `legal_domain` pour
-l'ancrer dans un droit donné.
+Structured legal reasoning (qualification, temporal validity, case law
+hierarchy, citation graph traversal…), jurisdiction-agnostic by default —
+set `jurisdiction` / `legal_domain` to ground it in a given legal system.
 
-Usage minimal :
+Minimal usage:
 
     from legolagents import LegalResearchAgent
     from legolagents.tools.retrieval import JurisprudenceSearchTool
     from smolagents import OpenAIServerModel
 
-    # Implémenter un tool concret (ou utiliser les tools SmartLawyer, cf. README)
+    # Implement a concrete tool (or use the SmartLawyer tools, see README)
     class MySearchTool(JurisprudenceSearchTool):
         def forward(self, query, domaine="", limit=5):
             ...
@@ -22,7 +21,7 @@ Usage minimal :
     agent = LegalResearchAgent(
         tools=[MySearchTool()], model=model, jurisdiction="France",
     )
-    result = agent.run("Quelle est la jurisprudence sur le barème Macron ?")
+    result = agent.run("What is the case law on the Macron severance scale?")
 """
 
 from .agents.base     import LegalAgent
@@ -57,7 +56,7 @@ __all__ = [
     "Certainty",
     "LegalCitation",
     "LegalToolResult",
-    # Tools document (concrets, prêts à l'emploi)
+    # Document tools (concrete, ready to use)
     "ReadDocumentTool",
     "GenerateDocxTool",
     "TrackedChangesTool",

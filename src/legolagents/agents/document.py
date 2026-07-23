@@ -1,10 +1,10 @@
 """
 legolagents.agents.document
 ────────────────────────────
-LegalDocumentAgent — agent de traitement documentaire.
+LegalDocumentAgent — document processing agent.
 
-Point d'entrée : un ou plusieurs documents (contrats, actes, CGV…).
-Capacités : analyse, révision avec tracked changes, génération, comparaison.
+Entry point: one or more documents (contracts, deeds, T&Cs…).
+Capabilities: analysis, revision with tracked changes, generation, comparison.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from ..tools.document import GenerateDocxTool, ReadDocumentTool, TrackedChangesT
 
 
 def _default_document_tools() -> list[Tool]:
-    """Retourne les tools document concrets inclus par défaut."""
+    """Return the concrete document tools included by default."""
     return [
         ReadDocumentTool(),
         GenerateDocxTool(),
@@ -30,33 +30,33 @@ def _default_document_tools() -> list[Tool]:
 
 class LegalDocumentAgent(LegalAgent):
     """
-    Agent spécialisé dans le traitement de documents juridiques.
+    Agent specialized in processing legal documents.
 
-    Contrairement aux agents de recherche, le LegalDocumentAgent travaille
-    sur des fichiers concrets (PDF, DOCX) et peut les modifier.
+    Unlike research agents, LegalDocumentAgent works on actual files
+    (PDF, DOCX) and can modify them.
 
-    Capacités :
-    - Lire et analyser un document (read_document)
-    - Réviser avec suivi des modifications Word (edit_document_tracked)
-    - Générer un nouveau document structuré (generate_docx)
-    - Comparer N documents sur M critères (tabular_analysis)
+    Capabilities:
+    - Read and analyze a document (read_document)
+    - Revise with Word tracked changes (edit_document_tracked)
+    - Generate a new structured document (generate_docx)
+    - Compare N documents across M criteria (tabular_analysis)
 
-    Les tools de recherche jurisprudentielle peuvent être ajoutés pour
-    que l'agent cite la jurisprudence applicable lors des révisions.
+    Case law research tools can be added so the agent cites applicable
+    case law during revisions.
 
     Parameters
     ----------
     tools : list[Tool] | None
-        Tools à utiliser. Si None, utilise les 4 tools document par défaut.
-        Pour ajouter la recherche jurisprudentielle :
+        Tools to use. If None, uses the 4 default document tools.
+        To add case law research:
             tools = default_document_tools() + [SearchJurisprudencesTool(...)]
     model : smolagents.Model
     document_paths : list[str] | None
-        Chemins des documents à traiter (injectés dans le contexte initial).
+        Paths of documents to process (injected into the initial context).
     jurisdiction : str
-        Juridiction de référence (ex: "France"), transmise à LegalAgent.
+        Reference jurisdiction (e.g. "France"), passed to LegalAgent.
     legal_domain : str
-        Domaine juridique — guide les analyses de conformité.
+        Legal domain — guides compliance analysis.
     """
 
     def __init__(
@@ -70,11 +70,11 @@ class LegalDocumentAgent(LegalAgent):
         if tools is None:
             tools = _default_document_tools()
 
-        # Injecter les chemins de documents dans le contexte
+        # Inject document paths into the context
         extra_context = ""
         if document_paths:
             doc_list = "\n".join(f"  - {p}" for p in document_paths)
-            extra_context = f"## Documents à traiter\n{doc_list}\n"
+            extra_context = f"## Documents to process\n{doc_list}\n"
 
         kwargs.setdefault("planning_interval", 2)
         kwargs.setdefault("max_steps", 12)
@@ -90,63 +90,63 @@ class LegalDocumentAgent(LegalAgent):
 
     def analyze(self, document_path: str, question: str = "") -> Any:
         """
-        Analyse un document et répond à une question le concernant.
+        Analyze a document and answer a question about it.
 
         Parameters
         ----------
         document_path : str
-            Chemin du document à analyser.
+            Path of the document to analyze.
         question : str
-            Question spécifique. Si vide, demande une analyse générale.
+            Specific question. If empty, requests a general analysis.
         """
-        q = question or "Analyse ce document juridique. Identifie les clauses clés et les points d'attention."
-        task = f"Document : {document_path}\n\n{q}"
+        q = question or "Analyze this legal document. Identify key clauses and points of attention."
+        task = f"Document: {document_path}\n\n{q}"
         return self.run(task)
 
     def review(self, document_path: str, instructions: str, output_path: str = "") -> Any:
         """
-        Révise un document et propose des modifications avec tracked changes.
+        Revise a document and propose changes with tracked changes.
 
         Parameters
         ----------
         document_path : str
-            Document à réviser.
+            Document to revise.
         instructions : str
-            Instructions de révision (ex: "Réduire la clause de non-concurrence à 1 an").
+            Revision instructions (e.g. "Reduce the non-compete clause to 1 year").
         output_path : str
-            Chemin du fichier révisé. Si vide, génère automatiquement.
+            Path of the revised file. If empty, generated automatically.
         """
         p = Path(document_path)
         out = output_path or str(p.with_stem(p.stem + "_revised"))
         task = (
-            f"Révise le document suivant avec le suivi des modifications Word.\n"
-            f"Document : {document_path}\n"
-            f"Sortie : {out}\n\n"
-            f"Instructions : {instructions}\n\n"
-            "IMPORTANT : Utiliser edit_document_tracked pour chaque modification."
+            f"Revise the following document with Word tracked changes.\n"
+            f"Document: {document_path}\n"
+            f"Output: {out}\n\n"
+            f"Instructions: {instructions}\n\n"
+            "IMPORTANT: Use edit_document_tracked for each change."
         )
         return self.run(task)
 
     def compare(self, document_paths: list[str], criteria: list[str], output_path: str = "") -> Any:
         """
-        Compare plusieurs documents selon des critères définis.
+        Compare multiple documents against defined criteria.
 
         Parameters
         ----------
         document_paths : list[str]
-            Chemins des documents à comparer.
+            Paths of the documents to compare.
         criteria : list[str]
-            Critères de comparaison (ex: ["Durée", "Clause résolutoire", "Garanties"]).
+            Comparison criteria (e.g. ["Term", "Termination clause", "Guarantees"]).
         output_path : str
-            Chemin du rapport DOCX de synthèse.
+            Path of the summary DOCX report.
         """
         docs_str = "\n".join(f"  - {p}" for p in document_paths)
         criteria_str = "\n".join(f"  - {c}" for c in criteria)
         task = (
-            f"Analyse comparative de {len(document_paths)} document(s).\n\n"
-            f"Documents :\n{docs_str}\n\n"
-            f"Critères d'analyse :\n{criteria_str}\n\n"
-            + (f"Rapport de sortie : {output_path}\n" if output_path else "")
-            + "\nUtiliser tabular_analysis pour produire la matrice comparative."
+            f"Comparative analysis of {len(document_paths)} document(s).\n\n"
+            f"Documents:\n{docs_str}\n\n"
+            f"Analysis criteria:\n{criteria_str}\n\n"
+            + (f"Output report: {output_path}\n" if output_path else "")
+            + "\nUse tabular_analysis to produce the comparison matrix."
         )
         return self.run(task)
