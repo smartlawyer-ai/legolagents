@@ -137,7 +137,7 @@ with SmartLawyerMCP(api_key="sk-sl-votre-cle") as outils:
     agent.run("L'arrêt 17-19.860 est-il toujours valide ?")
 ```
 
-→ [Obtenir une clé gratuite](https://smartlawyer.ai) · [Documentation MCP](https://mcp.smartlawyer.ai)
+→ [Obtenir une clé gratuite](https://smartlawyer.ai) · [Documentation MCP](https://smartlawyer.ai/mcp/)
 
 Ce connecteur est un exemple parmi d'autres MCP juridiques possibles (voir "Brancher votre propre base" ci-dessus) — le cœur du framework n'en dépend pas.
 
