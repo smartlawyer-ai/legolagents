@@ -137,7 +137,7 @@ with SmartLawyerMCP(api_key="sk-sl-your-key") as tools:
     agent.run("Is decision 17-19.860 still valid?")
 ```
 
-→ [Get a free API key](https://smartlawyer.ai) · [MCP documentation](https://mcp.smartlawyer.ai)
+→ [Get a free API key](https://smartlawyer.ai) · [MCP documentation](https://smartlawyer.ai/mcp/)
 
 This connector is one example among other possible legal MCP servers (see "Plug in your own database" above) — the core of the framework doesn't depend on it.
 
