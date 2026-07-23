@@ -215,3 +215,35 @@ class TestPlaybooks:
         prompt = pb.to_prompt()
         # Les conditions de signalement doivent apparaître
         assert "⚠️" in prompt or "Signaler si" in prompt
+
+    def test_quick_derives_id_from_title(self):
+        from legolagents.playbooks.base import Playbook
+        pb = Playbook.quick("NDA Review", points=["Parties — who are the parties?"])
+        assert pb.id == "nda_review"
+        assert pb.document_type == "NDA Review"
+
+    def test_quick_accepts_string_and_tuple_points(self):
+        from legolagents.playbooks.base import Playbook
+        pb = Playbook.quick("Quick Test", points=[
+            "Parties — who are the contracting parties?",
+            ("Term", "How long does it last?"),
+            "Solo label with no separator",
+        ])
+        assert len(pb.points) == 3
+        assert pb.points[0].label == "Parties"
+        assert pb.points[0].description == "who are the contracting parties?"
+        assert pb.points[1].label == "Term"
+        assert pb.points[1].description == "How long does it last?"
+        assert pb.points[2].label == "Solo label with no separator"
+        assert pb.points[2].description == ""
+        assert [p.number for p in pb.points] == [1, 2, 3]
+
+    def test_quick_register_chaining(self):
+        from legolagents.playbooks.base import Playbook, PlaybookLibrary
+        pb = Playbook.quick("Chain Test", points=["Point — desc"]).register()
+        assert PlaybookLibrary.get("chain_test") is pb
+
+    def test_quick_explicit_id_override(self):
+        from legolagents.playbooks.base import Playbook
+        pb = Playbook.quick("Custom Id Test", id="my_custom_id", points=["Point — desc"])
+        assert pb.id == "my_custom_id"

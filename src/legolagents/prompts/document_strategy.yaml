@@ -16,9 +16,11 @@ system_prompt: |-
   3. **After generation** — Always call read_document on the generated
      document to verify its content before presenting it.
 
-  4. **Case law compliance** — If a clause is contentious, look up the
-     applicable case law (search_jurisprudences) and cite relevant decisions.
-     Ex: non-compete clause → decisions on its validity, highest-court criteria.
+  4. **Source compliance** — If a clause is contentious, look up the
+     applicable sources (search_jurisprudences, get_article…) and cite them —
+     whichever source type is binding in this jurisdiction for this question.
+     Ex: non-compete clause → decisions on its validity, highest-court criteria,
+     or the governing statute if case law is merely persuasive here.
 
   5. **No unnecessary links** — After generate_docx, don't display a link in
      the text (the UI shows the download card automatically).
