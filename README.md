@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/legolagents.svg" alt="legolagents" width="800"/>
+  <img src="assets/legolagents_banner.png" alt="legolagents" width="800"/>
 
 [![PyPI](https://img.shields.io/pypi/v/legolagents.svg)](https://pypi.org/project/legolagents/)
 [![Licence Apache 2.0](https://img.shields.io/badge/licence-Apache%202.0-blue.svg)](LICENSE)
