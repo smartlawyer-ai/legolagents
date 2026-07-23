@@ -182,6 +182,8 @@ with SmartLawyerMCP(api_key="sk-sl-votre-cle") as outils:
 
 Ce connecteur est un exemple parmi d'autres MCP juridiques possibles (voir "Brancher votre propre base" ci-dessus) — le cœur du framework n'en dépend pas.
 
+Envie d'une vraie interface de chat plutôt qu'un script ? [`examples/06_chainlit_smartlawyer_chatbot.py`](examples/06_chainlit_smartlawyer_chatbot.py) branche le même agent dans un chatbot [Chainlit](https://chainlit.io) fonctionnel en une quinzaine de lignes.
+
 ---
 
 ## Playbooks disponibles (exemples droit français)

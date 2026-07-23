@@ -182,6 +182,8 @@ with SmartLawyerMCP(api_key="sk-sl-your-key") as tools:
 
 This connector is one example among other possible legal MCP servers (see "Plug in your own database" above) — the core of the framework doesn't depend on it.
 
+Want a full chat UI instead of a script? [`examples/06_chainlit_smartlawyer_chatbot.py`](examples/06_chainlit_smartlawyer_chatbot.py) wires the same agent into a working [Chainlit](https://chainlit.io) chatbot in about 15 lines.
+
 ---
 
 ## Available playbooks (French law examples)
