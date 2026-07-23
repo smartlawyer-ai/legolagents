@@ -3,7 +3,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/legolagents.svg)](https://pypi.org/project/legolagents/)
 [![Apache 2.0 License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-51%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-66%20passed-brightgreen.svg)]()
 [![Built on smolagents](https://img.shields.io/badge/built%20on-smolagents-orange.svg)](https://github.com/huggingface/smolagents)
 
 [Version française](README.fr.md)
@@ -28,6 +28,20 @@ pip install legolagents
 
 **With legolagents**, the agent automatically applies a jurist's protocol:
 it checks the validity of each decision, distinguishes landmark decisions from case-specific ones, walks citations across several levels, and flags divergences between courts or jurisdictions.
+
+---
+
+## The pattern
+
+```python
+from legolagents import SourceType, Authority, LegalSource
+
+statute = LegalSource(ref="L1235-3", type=SourceType.STATUTE, authority=Authority.BINDING)
+case    = LegalSource(ref="21-14.027", type=SourceType.CASE_LAW, authority=Authority.PERSUASIVE)
+case.relates_to(statute, how="interprets")
+```
+
+Every legal system on earth mixes codified sources (statutes, regulations, treaties) and case law — what actually changes from one jurisdiction to the next is **authority**, not **type**. A court decision is `PERSUASIVE` in a civil law country, `BINDING` in a common law one — same `SourceType.CASE_LAW` either way. This is the vocabulary the reasoning strategy, the tools, and the citations all share: set the authority ranking once per jurisdiction, and the rest of the framework adapts. See [`legolagents.ontology`](src/legolagents/ontology.py) for the full model (source types, authority levels, and the relation types — cites, interprets, applies, distinguishes, overturns, supersedes, implements).
 
 ---
 
@@ -57,6 +71,33 @@ print(agent.run("What is the case law on wrongful termination of a sale agreemen
 The agent automatically checks the validity of decisions, walks the citation graph, and answers with a certainty level: `✅ Established law`, `⚡ Trending`, `⚠️ Isolated`, or `❌ Superseded`.
 
 Don't have a case law database yet? See the [Example: bootstrapping on the French market](#example-bootstrapping-on-the-french-market-smartlawyer-mcp) section below — a ready-to-use MCP connector to try the framework without building anything.
+
+---
+
+## Playbooks — a workflow in one line
+
+```python
+from legolagents.playbooks import Playbook
+
+Playbook.quick("NDA Review", points=[
+    "Parties — who are the contracting parties?",
+    "Term — how long does the confidentiality obligation last?",
+    "Carve-outs — what information is excluded from confidentiality?",
+]).register()
+```
+
+`Playbook.quick(...).register()` builds and registers a structured analysis workflow in one call — points accept plain `"Label — description"` strings, `id` and document type are inferred from the title. Then hand it to any document agent:
+
+```python
+from legolagents import LegalDocumentAgent
+from legolagents.playbooks import PlaybookLibrary
+
+agent    = LegalDocumentAgent(model=model)
+playbook = PlaybookLibrary.get("nda_review")
+agent.run(f"Document: my_nda.docx\n\n{playbook.to_prompt()}")
+```
+
+For full control (flag conditions, custom output format, extra instructions), `Playbook` and `PlaybookPoint` remain available directly — see the built-in French-law playbooks below for an example.
 
 ---
 
@@ -152,7 +193,7 @@ This connector is one example among other possible legal MCP servers (see "Plug 
 | `pacte_associes` | Shareholders' agreement | 15 |
 | `convention_credit` | Credit agreement | 18 |
 
-These playbooks ship ready-to-use for the French market; write your own with `Playbook`/`PlaybookLibrary` for any other jurisdiction or document type.
+These playbooks ship ready-to-use for the French market; write your own with `Playbook.quick(...)` (see above) for any other jurisdiction or document type.
 
 ---
 
