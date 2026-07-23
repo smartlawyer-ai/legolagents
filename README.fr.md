@@ -3,7 +3,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/legolagents.svg)](https://pypi.org/project/legolagents/)
 [![Licence Apache 2.0](https://img.shields.io/badge/licence-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-51%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-66%20passed-brightgreen.svg)]()
 [![Basé sur smolagents](https://img.shields.io/badge/basé%20sur-smolagents-orange.svg)](https://github.com/huggingface/smolagents)
 
 [English version](README.md)
@@ -28,6 +28,20 @@ pip install legolagents
 
 **Avec legolagents**, l'agent applique automatiquement le protocole d'un juriste :
 vérifie la validité de chaque décision, distingue les décisions de principe des décisions d'espèce, remonte les citations sur plusieurs niveaux, et signale les divergences entre chambres ou juridictions.
+
+---
+
+## Le pattern
+
+```python
+from legolagents import SourceType, Authority, LegalSource
+
+statute = LegalSource(ref="L1235-3", type=SourceType.STATUTE, authority=Authority.BINDING)
+case    = LegalSource(ref="21-14.027", type=SourceType.CASE_LAW, authority=Authority.PERSUASIVE)
+case.relates_to(statute, how="interprets")
+```
+
+Tous les systèmes juridiques du monde combinent des sources codifiées (lois, règlements, traités) et de la jurisprudence — ce qui change réellement d'une juridiction à l'autre, c'est l'**autorité**, pas le **type**. Une décision de justice est `PERSUASIVE` en droit civil, `BINDING` en common law — même `SourceType.CASE_LAW` dans les deux cas. C'est ce vocabulaire que partagent la stratégie de raisonnement, les tools et les citations : on fixe le rang d'autorité une fois par juridiction, et le reste du framework s'adapte. Voir [`legolagents.ontology`](src/legolagents/ontology.py) pour le modèle complet (types de sources, niveaux d'autorité, et les types de relations — cite, interprète, applique, distingue, renverse, supersède, met en œuvre).
 
 ---
 
@@ -57,6 +71,33 @@ print(agent.run("Quelle est la jurisprudence sur la rupture abusive de promesse 
 L'agent vérifie automatiquement la validité des décisions, remonte le graphe de citations, et répond avec un niveau de certitude : `✅ Droit établi`, `⚡ Tendance`, `⚠️ Isolé`, ou `❌ Superseded`.
 
 Pas encore de base jurisprudentielle ? Voir la section [Exemple : démarrer sur le marché français](#exemple--démarrer-sur-le-marché-français-smartlawyer-mcp) plus bas — un connecteur MCP prêt à l'emploi pour tester le framework sans rien construire.
+
+---
+
+## Playbooks — un workflow en une ligne
+
+```python
+from legolagents.playbooks import Playbook
+
+Playbook.quick("Revue de NDA", points=[
+    "Parties — qui sont les parties contractantes ?",
+    "Durée — combien de temps dure l'obligation de confidentialité ?",
+    "Exceptions — quelles informations sont exclues de la confidentialité ?",
+]).register()
+```
+
+`Playbook.quick(...).register()` construit et enregistre un workflow d'analyse structuré en un seul appel — les points acceptent de simples chaînes `"Label — description"`, l'`id` et le type de document sont déduits du titre. Il suffit ensuite de le passer à n'importe quel agent documentaire :
+
+```python
+from legolagents import LegalDocumentAgent
+from legolagents.playbooks import PlaybookLibrary
+
+agent    = LegalDocumentAgent(model=model)
+playbook = PlaybookLibrary.get("revue_de_nda")
+agent.run(f"Document : mon_nda.docx\n\n{playbook.to_prompt()}")
+```
+
+Pour un contrôle complet (conditions de signalement, format de sortie personnalisé, instructions supplémentaires), `Playbook` et `PlaybookPoint` restent disponibles directement — voir les playbooks droit français ci-dessous en exemple.
 
 ---
 
@@ -152,7 +193,7 @@ Ce connecteur est un exemple parmi d'autres MCP juridiques possibles (voir "Bran
 | `pacte_associes` | Pacte d'associés | 15 |
 | `convention_credit` | Convention de crédit | 18 |
 
-Ces playbooks sont fournis prêts à l'emploi pour le marché français ; écrivez les vôtres avec `Playbook`/`PlaybookLibrary` pour toute autre juridiction ou type de document.
+Ces playbooks sont fournis prêts à l'emploi pour le marché français ; écrivez les vôtres avec `Playbook.quick(...)` (voir ci-dessus) pour toute autre juridiction ou type de document.
 
 ---
 
