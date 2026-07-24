@@ -1,12 +1,13 @@
 """Playbook : Analyse de Convention de Crédit (droit FR — adapté de mike)"""
 
-from ..base import Playbook, PlaybookLibrary, PlaybookPoint
+from ...base import Playbook, PlaybookLibrary, PlaybookPoint
 
 CREDIT_AGREEMENT = Playbook(
     id            = "convention_credit",
     title         = "Analyse de Convention de Crédit",
     document_type = "convention de crédit ou contrat de prêt",
     legal_domain  = "droit bancaire",
+    jurisdiction  = "fr",
     output_format = "docx",
     points=[
         PlaybookPoint(1,  "Prêteurs",

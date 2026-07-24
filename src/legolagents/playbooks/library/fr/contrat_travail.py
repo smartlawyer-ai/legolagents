@@ -1,12 +1,13 @@
 """Playbook : Analyse de Contrat de Travail (CDI / CDD)"""
 
-from ..base import Playbook, PlaybookLibrary, PlaybookPoint
+from ...base import Playbook, PlaybookLibrary, PlaybookPoint
 
 CONTRAT_TRAVAIL = Playbook(
     id            = "contrat_travail",
     title         = "Analyse de Contrat de Travail",
     document_type = "contrat de travail (CDI ou CDD)",
     legal_domain  = "droit social",
+    jurisdiction  = "fr",
     output_format = "both",
     points=[
         PlaybookPoint(1,  "Parties et qualification",

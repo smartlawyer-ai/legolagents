@@ -1,12 +1,13 @@
 """Playbook : Analyse de Pacte d'Associés / Pacte d'Actionnaires (droit FR)"""
 
-from ..base import Playbook, PlaybookLibrary, PlaybookPoint
+from ...base import Playbook, PlaybookLibrary, PlaybookPoint
 
 SHAREHOLDER_AGREEMENT = Playbook(
     id            = "pacte_associes",
     title         = "Analyse de Pacte d'Associés / Actionnaires",
     document_type = "pacte d'associés ou d'actionnaires",
     legal_domain  = "droit des sociétés",
+    jurisdiction  = "fr",
     output_format = "docx",
     points=[
         PlaybookPoint(1,  "Parties et participations",

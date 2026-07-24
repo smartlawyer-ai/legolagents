@@ -67,6 +67,10 @@ class Playbook:
         "inline" (chat answer) | "docx" (Word document) | "both"
     instructions : str
         Extra instructions for the agent
+    jurisdiction : str
+        Legal system this playbook's content is grounded in (e.g. "fr",
+        "us", "uk", "de", "eu"). Purely informational/filtering — a
+        playbook is just as usable without it.
     """
     id: str
     title: str
@@ -75,6 +79,7 @@ class Playbook:
     output_format: str = "inline"
     instructions: str = ""
     legal_domain: str = ""
+    jurisdiction: str = ""
 
     @classmethod
     def quick(
@@ -184,9 +189,20 @@ class PlaybookLibrary:
         return cls._registry.get(playbook_id)
 
     @classmethod
-    def list(cls) -> list[str]:
-        return list(cls._registry.keys())
+    def list(cls, jurisdiction: Optional[str] = None) -> list[str]:
+        """List registered playbook ids, optionally filtered by jurisdiction
+        (e.g. "fr", "us", "uk", "de", "eu")."""
+        return [p.id for p in cls.all(jurisdiction=jurisdiction)]
 
     @classmethod
-    def all(cls) -> list[Playbook]:
-        return list(cls._registry.values())
+    def all(cls, jurisdiction: Optional[str] = None) -> list[Playbook]:
+        """List registered playbooks, optionally filtered by jurisdiction."""
+        values = list(cls._registry.values())
+        if jurisdiction is None:
+            return values
+        return [p for p in values if p.jurisdiction.lower() == jurisdiction.lower()]
+
+    @classmethod
+    def jurisdictions(cls) -> list[str]:
+        """List distinct jurisdictions represented in the registry."""
+        return sorted({p.jurisdiction for p in cls._registry.values() if p.jurisdiction})

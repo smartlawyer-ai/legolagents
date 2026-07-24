@@ -186,7 +186,11 @@ Want a full chat UI instead of a script? [`examples/06_chainlit_smartlawyer_chat
 
 ---
 
-## Available playbooks (French law examples)
+## Available playbooks (18, across 5 jurisdictions)
+
+Playbooks are organized by **jurisdiction, not language** — French is spoken in France, Belgium, Switzerland, Québec… each with its own law, so grouping by legal system (`playbooks/library/fr/`, `us/`, `uk/`, `de/`, `eu/`) keeps a playbook's content coherent. Filter or list them with `PlaybookLibrary.list(jurisdiction="us")` / `PlaybookLibrary.jurisdictions()`.
+
+**France** (`fr`) — French Commercial/Labor/Civil Code:
 
 | ID | Document | Analysis points |
 |---|---|---|
@@ -195,7 +199,41 @@ Want a full chat UI instead of a script? [`examples/06_chainlit_smartlawyer_chat
 | `pacte_associes` | Shareholders' agreement | 15 |
 | `convention_credit` | Credit agreement | 18 |
 
-These playbooks ship ready-to-use for the French market; write your own with `Playbook.quick(...)` (see above) for any other jurisdiction or document type.
+**United States** (`us`) — federal law plus Delaware/California/New York variance:
+
+| ID | Document | Analysis points |
+|---|---|---|
+| `us_nda` | NDA (mutual or one-way) | 13 (DTSA, state noncompete variance) |
+| `us_employment_agreement` | Employment agreement (at-will) | 12 (FLSA, state noncompete variance) |
+| `us_commercial_lease` | Commercial lease | 13 (state landlord-tenant variance) |
+| `us_saas_msa` | SaaS agreement / MSA | 13 (UCC, state privacy law, AI-training clauses) |
+
+**United Kingdom** (`uk`) — England & Wales law:
+
+| ID | Document | Analysis points |
+|---|---|---|
+| `uk_nda` | NDA / confidentiality agreement | 12 (Coco v Clark, Trade Secrets Regs 2018) |
+| `uk_employment_contract` | Employment contract | 13 (Employment Rights Act 1996/2025) |
+| `uk_commercial_lease` | Commercial lease | 13 (Landlord and Tenant Act 1954 Part II) |
+| `uk_saas_msa` | SaaS agreement / MSA | 13 (UCTA 1977, UK GDPR) |
+
+**Germany** (`de`) — Bundesrepublik Deutschland, content in German:
+
+| ID | Document | Analysis points |
+|---|---|---|
+| `de_geheimhaltungsvereinbarung` | NDA | 12 (GeschGehG, § 307 BGB) |
+| `de_arbeitsvertrag` | Employment contract | 13 (§ 622 BGB, § 74 HGB, KSchG) |
+| `de_gewerbemietvertrag` | Commercial lease | 13 (§ 550 BGB Schriftform) |
+
+**EU** (`eu`) — supranational, cross-border regulatory content:
+
+| ID | Document | Analysis points |
+|---|---|---|
+| `eu_data_processing_agreement` | Data Processing Agreement | 13 (GDPR Art. 28) |
+| `eu_gdpr_compliance_review` | GDPR compliance review | 14 (GDPR + EU AI Act overlap) |
+| `eu_distribution_agreement` | Distribution / vertical agreement | 13 (VBER 2022/720) |
+
+These playbooks ship ready-to-use; write your own with `Playbook.quick(...)` (see above) for any other jurisdiction or document type. Legal citations reflect law as researched at authoring time — always verify current status before relying on them for real matters.
 
 ---
 
