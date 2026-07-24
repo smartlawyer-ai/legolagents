@@ -31,29 +31,6 @@ vérifie la validité de chaque décision, distingue les décisions de principe 
 
 ---
 
-## Le pattern
-
-```python
-from legolagents import SourceType, Authority, LegalSource
-
-statute = LegalSource(ref="L1235-3", kind=SourceType.STATUTE, authority=Authority.BINDING)
-case    = LegalSource.from_payload(
-    {"number": "21-14.027", "cited_by_count": 42, "importance_score": 90},
-    kind=SourceType.CASE_LAW, authority=Authority.PERSUASIVE,
-)
-case.relates_to(statute, how="interprets")
-
-print(case.to_markdown())
-# **[case_law] 21-14.027** (💬 persuasive) ✅ Droit établi
-#   ↳ interprets L1235-3
-```
-
-Tous les systèmes juridiques du monde combinent des sources codifiées (lois, règlements, traités) et de la jurisprudence — ce qui change réellement d'une juridiction à l'autre, c'est l'**autorité**, pas le **type**. Une décision de justice est `PERSUASIVE` en droit civil, `BINDING` en common law — même `SourceType.CASE_LAW` dans les deux cas.
-
-En usage réel, on ne construit pas `LegalSource` un par un comme ici — une vraie intégration en a des milliers. `LegalSource.from_payload()` / `from_payloads()` mappent les enregistrements bruts de votre source de données en masse, et l'autorité/la certitude/les relations viennent des métadonnées de vos données elles-mêmes (contraignant ou persuasif, `cited_by_count`, `superseded_by`…), pas d'une étape séparée qu'on exécute après coup. Voir [`legolagents.ontology`](src/legolagents/ontology.py) pour le modèle complet (types de sources, niveaux d'autorité, et les types de relations — cite, interprète, applique, distingue, renverse, supersède, met en œuvre).
-
----
-
 ## Démarrage rapide (n'importe quelle juridiction)
 
 Un agent juridique travaille sur un **corpus** — un corps de droit (ex : "RGPD", "Code du travail français", "droit des sociétés du Delaware"). Branchez le vôtre en implémentant quatre méthodes — `get_law`, `search_law`, `get_jp`, `search_jp` — et les tools de l'agent sont construits pour vous, sans classe `Tool` à écrire :
@@ -85,6 +62,52 @@ print(agent.run("Quelles sont les obligations d'un sous-traitant au titre de l'a
 C'est toute la surface d'intégration. L'agent vérifie automatiquement la validité des décisions, remonte le graphe de citations, et répond avec un niveau de certitude : `✅ Droit établi`, `⚡ Tendance`, `⚠️ Isolé`, ou `❌ Superseded`.
 
 Pas encore de base jurisprudentielle ? Voir la section [Exemple : démarrer sur le marché français](#exemple--démarrer-sur-le-marché-français-smartlawyer-mcp) plus bas — un `LegalCorpus` prêt à l'emploi pour tester le framework sans rien construire.
+
+---
+
+## Sous le capot : l'ontologie, et l'ajout de vos propres tools
+
+Chaque `LegalSource` que votre corpus retourne (via `get_law`, `search_jp`, etc.) repose sur une seule forme universelle : `SourceType` × `Authority`. Tous les systèmes juridiques du monde combinent des sources codifiées (lois, règlements, traités) et de la jurisprudence — ce qui change réellement d'une juridiction à l'autre, c'est l'**autorité**, pas le **type**. Une décision de justice est `PERSUASIVE` en droit civil, `BINDING` en common law — même `SourceType.CASE_LAW` dans les deux cas :
+
+```python
+from legolagents import SourceType, Authority, LegalSource
+
+statute = LegalSource(ref="L1235-3", kind=SourceType.STATUTE, authority=Authority.BINDING)
+case    = LegalSource.from_payload(
+    {"number": "21-14.027", "cited_by_count": 42, "importance_score": 90},
+    kind=SourceType.CASE_LAW, authority=Authority.PERSUASIVE,
+)
+case.relates_to(statute, how="interprets")
+
+print(case.to_markdown())
+# **[case_law] 21-14.027** (💬 persuasive) ✅ Droit établi
+#   ↳ interprets L1235-3
+```
+
+On ne construit pas ces objets un par un dans le code applicatif — `from_payload()` / `from_payloads()` mappent les enregistrements bruts de votre source de données en masse (c'est ce que fait une vraie implémentation de `get_law`/`search_jp`), et l'autorité/la certitude/les relations viennent des métadonnées de vos données elles-mêmes (contraignant ou persuasif, `cited_by_count`, `superseded_by`…), pas d'une étape séparée qu'on exécute après coup.
+
+Les quatre méthodes du corpus sont le minimum, pas le plafond. Besoin d'une capacité qui ne rentre pas dans `get_law`/`search_law`/`get_jp`/`search_jp` — par exemple "qu'est-ce qui cite cet article" ? Ajoutez une simple fonction avec le décorateur `@tool` de `smolagents` : la docstring devient la description du tool, le bloc `Args:` devient son schéma d'entrée — c'est ce que voit réellement l'agent.
+
+```python
+from smolagents import tool
+from legolagents import LegalSource, SourceType, Authority
+
+@tool
+def articles_cites_par(ref: str) -> str:
+    """
+    Liste chaque décision qui cite, interprète ou applique un article de loi donné.
+
+    Args:
+        ref: Référence de l'article à rechercher (ex : "L1235-3").
+    """
+    resultats = ma_base.trouver_citations(ref)
+    sources = LegalSource.from_payloads(resultats, kind=SourceType.CASE_LAW, authority=Authority.PERSUASIVE)
+    return "\n".join(f"- {s.to_markdown()}" for s in sources)
+
+agent = LegalResearchAgent(corpus=MonCorpus(), tools=[articles_cites_par], model=model)
+```
+
+`tools=` et `corpus=` se combinent librement — l'agent reçoit les quatre tools standards plus tout ce que vous ajoutez. Voir [`legolagents.ontology`](src/legolagents/ontology.py) pour le modèle complet (types de sources, niveaux d'autorité, et les types de relations — cite, interprète, applique, distingue, renverse, supersède, met en œuvre).
 
 ---
 
