@@ -17,7 +17,7 @@ Example implementation:
             self.client = client
             self.embed  = embed_fn
 
-        def forward(self, query, domaine="", limit=5):
+        def forward(self, query, domain="", limit=5):
             # ... call Qdrant ...
             return self.format_results(points)
 """
@@ -46,7 +46,7 @@ class JurisprudenceSearchTool(LegalTool):
             "type": "string",
             "description": "Legal query in natural language (e.g. 'wrongful termination sale agreement')",
         },
-        "domaine": {
+        "domain": {
             "type": "string",
             "description": "Filter by domain (e.g. 'employment law', 'civil law'). Leave empty for all.",
             "nullable": True,
@@ -60,7 +60,7 @@ class JurisprudenceSearchTool(LegalTool):
     output_type = "string"
 
     @abstractmethod
-    def forward(self, query: str, domaine: str = "", limit: int = 5) -> str:
+    def forward(self, query: str, domain: str = "", limit: int = 5) -> str:
         raise NotImplementedError
 
     def format_results(self, hits: list[dict], base_url: str = "") -> str:
@@ -82,10 +82,10 @@ class JurisprudenceSearchTool(LegalTool):
                 cited_by_count=h.get("cited_by_count") or 0,
                 certainty=certainty,
             )
-            probleme = (h.get("probleme") or "")[:200]
+            issue = (h.get("issue") or h.get("probleme") or "")[:200]
             lines.append(f"- {citation.to_markdown()}")
-            if probleme:
-                lines.append(f"  {probleme}…")
+            if issue:
+                lines.append(f"  {issue}…")
 
         return "\n".join(lines)
 
@@ -103,7 +103,7 @@ class FindLandmarkCasesTool(LegalTool):
         "Use first in any research to identify established law."
     )
     inputs = {
-        "domaine": {
+        "domain": {
             "type": "string",
             "description": "Legal domain (e.g. 'employment law', 'civil law')",
         },
@@ -116,7 +116,7 @@ class FindLandmarkCasesTool(LegalTool):
     output_type = "string"
 
     @abstractmethod
-    def forward(self, domaine: str, limit: int = 5) -> str:
+    def forward(self, domain: str, limit: int = 5) -> str:
         raise NotImplementedError
 
 

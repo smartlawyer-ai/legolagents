@@ -30,14 +30,14 @@ fiche = {
     "decision_date":   "2022-09-11",
     "number":          "21-14.027",
     "solution":        "Dismissed",
-    "domaine":         "employment law",
-    "sous_domaine":    "termination",
-    "faits":           (
+    "domain":          "employment law",
+    "sub_domain":      "termination",
+    "facts":           (
         "An employee terminated without real and serious cause challenged "
         "the capping of their compensation by the Macron scale in light of "
         "ILO Convention 158."
     ),
-    "probleme":        "Is the Macron severance scale compatible with ILO Convention 158?",
+    "issue":           "Is the Macron severance scale compatible with ILO Convention 158?",
     "solution_text":   (
         "The Court of Appeal did not violate ILO Convention 158 by applying "
         "the scale under Article L1235-3 of the French Labor Code."
