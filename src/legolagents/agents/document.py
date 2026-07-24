@@ -10,11 +10,12 @@ Capabilities: analysis, revision with tracked changes, generation, comparison.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from smolagents.tools import Tool
 
 from .base import LegalAgent
+from ..corpus import LegalCorpus
 from ..tools.document import GenerateDocxTool, ReadDocumentTool, TrackedChangesTool, TabularAnalysisTool
 
 
@@ -48,8 +49,10 @@ class LegalDocumentAgent(LegalAgent):
     ----------
     tools : list[Tool] | None
         Tools to use. If None, uses the 4 default document tools.
-        To add case law research:
-            tools = default_document_tools() + [SearchJurisprudencesTool(...)]
+    corpus : LegalCorpus | None
+        Add case law/statute research on top of document tools, e.g. so
+        the agent cites applicable law during revisions (see
+        `legolagents.corpus.LegalCorpus`).
     model : smolagents.Model
     document_paths : list[str] | None
         Paths of documents to process (injected into the initial context).
@@ -61,8 +64,9 @@ class LegalDocumentAgent(LegalAgent):
 
     def __init__(
         self,
-        tools: list[Tool] | None = None,
+        tools: Optional[list[Tool]] = None,
         model: Any = None,
+        corpus: Optional[LegalCorpus] = None,
         document_paths: list[str] | None = None,
         legal_domain: str = "",
         **kwargs: Any,
@@ -81,6 +85,7 @@ class LegalDocumentAgent(LegalAgent):
 
         super().__init__(
             tools=tools,
+            corpus=corpus,
             model=model,
             legal_domain=legal_domain,
             extra_context=extra_context,

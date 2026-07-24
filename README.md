@@ -3,7 +3,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/legolagents.svg)](https://pypi.org/project/legolagents/)
 [![Apache 2.0 License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-66%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-106%20passed-brightgreen.svg)]()
 [![Built on smolagents](https://img.shields.io/badge/built%20on-smolagents-orange.svg)](https://github.com/huggingface/smolagents)
 
 [Version française](README.fr.md)
@@ -36,41 +36,55 @@ it checks the validity of each decision, distinguishes landmark decisions from c
 ```python
 from legolagents import SourceType, Authority, LegalSource
 
-statute = LegalSource(ref="L1235-3", type=SourceType.STATUTE, authority=Authority.BINDING)
-case    = LegalSource(ref="21-14.027", type=SourceType.CASE_LAW, authority=Authority.PERSUASIVE)
+statute = LegalSource(ref="L1235-3", kind=SourceType.STATUTE, authority=Authority.BINDING)
+case    = LegalSource.from_payload(
+    {"number": "21-14.027", "cited_by_count": 42, "importance_score": 90},
+    kind=SourceType.CASE_LAW, authority=Authority.PERSUASIVE,
+)
 case.relates_to(statute, how="interprets")
+
+print(case.to_markdown())
+# **[case_law] 21-14.027** (💬 persuasive) ✅ Established law
+#   ↳ interprets L1235-3
 ```
 
-Every legal system on earth mixes codified sources (statutes, regulations, treaties) and case law — what actually changes from one jurisdiction to the next is **authority**, not **type**. A court decision is `PERSUASIVE` in a civil law country, `BINDING` in a common law one — same `SourceType.CASE_LAW` either way. This is the vocabulary the reasoning strategy, the tools, and the citations all share: set the authority ranking once per jurisdiction, and the rest of the framework adapts. See [`legolagents.ontology`](src/legolagents/ontology.py) for the full model (source types, authority levels, and the relation types — cites, interprets, applies, distinguishes, overturns, supersedes, implements).
+Every legal system on earth mixes codified sources (statutes, regulations, treaties) and case law — what actually changes from one jurisdiction to the next is **authority**, not **type**. A court decision is `PERSUASIVE` in a civil law country, `BINDING` in a common law one — same `SourceType.CASE_LAW` either way.
+
+In real usage you don't construct `LegalSource` one at a time like this — a real integration has thousands of them. `LegalSource.from_payload()` / `from_payloads()` map your data source's raw records in bulk, and authority/certainty/relations come from your data's own metadata (binding vs. persuasive, `cited_by_count`, `superseded_by`…), not a separate step you run afterward. See [`legolagents.ontology`](src/legolagents/ontology.py) for the full model (source types, authority levels, and the relation types — cites, interprets, applies, distinguishes, overturns, supersedes, implements).
 
 ---
 
 ## Quickstart (any jurisdiction)
 
-legolagents doesn't assume any database or any legal system — you plug in your own tools:
+A legal agent works on a **corpus** — a body of law (e.g. "GDPR", "French Labor Code", "Delaware corporate law"). Plug yours in by implementing four methods — `get_law`, `search_law`, `get_jp`, `search_jp` — and the agent's tools are built for you, no `Tool` subclass to write:
 
 ```python
-from legolagents import LegalResearchAgent
-from legolagents.tools.retrieval import JurisprudenceSearchTool
+from legolagents import LegalResearchAgent, LegalCorpus, LegalSource, SourceType, Authority
 from smolagents import LiteLLMModel
 
-class MySearchTool(JurisprudenceSearchTool):
-    def forward(self, query: str, domaine: str = "", limit: int = 5) -> str:
-        results = my_database.search(query)
-        return self.format_results(results)
+class MyCorpus(LegalCorpus):
+    name         = "GDPR"
+    jurisdiction = "EU"
+
+    def get_law(self, ref):
+        payload = my_database.fetch_article(ref)
+        return LegalSource.from_payload(payload, kind=SourceType.REGULATION, authority=Authority.BINDING)
+
+    def search_law(self, query, limit=5):
+        return LegalSource.from_payloads(my_database.search_articles(query, limit),
+                                          kind=SourceType.REGULATION, authority=Authority.BINDING)
+
+    def get_jp(self, ref): ...             # same idea, kind=SourceType.CASE_LAW
+    def search_jp(self, query, limit=5): ...
 
 model = LiteLLMModel(model_id="anthropic/claude-sonnet-4-5")
-agent = LegalResearchAgent(
-    tools=[MySearchTool()],
-    model=model,
-    jurisdiction="France",   # or "Belgium", "Quebec"… or empty (generic)
-)
-print(agent.run("What is the case law on wrongful termination of a sale agreement?"))
+agent = LegalResearchAgent(corpus=MyCorpus(), model=model)   # jurisdiction/legal_domain default from the corpus
+print(agent.run("What are a processor's obligations under Article 28 GDPR, and how have courts interpreted them?"))
 ```
 
-The agent automatically checks the validity of decisions, walks the citation graph, and answers with a certainty level: `✅ Established law`, `⚡ Trending`, `⚠️ Isolated`, or `❌ Superseded`.
+That's the whole integration surface. The agent automatically checks the validity of decisions, walks the citation graph, and answers with a certainty level: `✅ Established law`, `⚡ Trending`, `⚠️ Isolated`, or `❌ Superseded`.
 
-Don't have a case law database yet? See the [Example: bootstrapping on the French market](#example-bootstrapping-on-the-french-market-smartlawyer-mcp) section below — a ready-to-use MCP connector to try the framework without building anything.
+Don't have a case law database yet? See the [Example: bootstrapping on the French market](#example-bootstrapping-on-the-french-market-smartlawyer-mcp) section below — a ready-to-use `LegalCorpus` to try the framework without building anything.
 
 ---
 
@@ -146,18 +160,9 @@ agent.compare(
 
 ## Plug in your own database
 
-legolagents defines interfaces — you implement `forward()` for your backend, in any language or jurisdiction:
+`LegalCorpus` doesn't care what's behind it — Qdrant, Elasticsearch, a REST API, a SQL database, or any legal MCP server. Implement the four methods against your backend and return `LegalSource` objects (built in bulk with `from_payload`/`from_payloads`, see above).
 
-```python
-from legolagents.tools.retrieval import JurisprudenceSearchTool
-
-class MyTool(JurisprudenceSearchTool):
-    def forward(self, query: str, domaine: str = "", limit: int = 5) -> str:
-        results = my_database.search(query)
-        return self.format_results(results)
-```
-
-Works with Qdrant, Elasticsearch, a REST API, or any legal MCP server.
+If you'd rather not implement a corpus at all, `tools=[...]` still accepts any smolagents `Tool` list directly — `corpus=` and `tools=` can also be combined (e.g. a corpus for research plus extra document tools).
 
 ---
 
@@ -171,12 +176,14 @@ pip install 'legolagents[mcp]'
 
 ```python
 from legolagents import LegalResearchAgent
-from legolagents.mcp import SmartLawyerMCP
+from legolagents.mcp import SmartLawyerCorpus
 
-with SmartLawyerMCP(api_key="sk-sl-your-key") as tools:
-    agent = LegalResearchAgent(tools=tools, model=model, jurisdiction="France")
+with SmartLawyerCorpus(api_key="sk-sl-your-key") as corpus:   # jurisdiction="France" by default
+    agent = LegalResearchAgent(corpus=corpus, model=model)
     agent.run("Is decision 17-19.860 still valid?")
 ```
+
+`SmartLawyerCorpus` implements `LegalCorpus` on top of SmartLawyer's MCP tools, and also exposes its graph/reversal-detection tools (`find_revirements`, `superseded_chain`, `get_legal_graph`…) alongside the standard four. Prefer the lower-level `SmartLawyerMCP` (raw MCP tool list, `tools=` instead of `corpus=`) if you want the tools unmapped to `LegalSource`.
 
 → [Get a free API key](https://smartlawyer.ai) · [MCP documentation](https://smartlawyer.ai/mcp/)
 

@@ -4,8 +4,14 @@ legolagents.agents.base
 LegalAgent — extends ToolCallingAgent with a structured legal reasoning
 strategy, jurisdiction-agnostic by default.
 
-Usage:
+Usage — plug in a corpus (recommended, see `legolagents.corpus.LegalCorpus`):
+
     from legolagents import LegalAgent
+
+    agent = LegalAgent(corpus=MyCorpus(), model=model, legal_domain="employment law")
+    result = agent.run("What is the case law on the Macron severance scale?")
+
+Or supply tools directly, if you'd rather not implement a LegalCorpus:
 
     agent = LegalAgent(
         tools=[SearchJurisprudencesTool(), GetLegalGraphTool()],
@@ -13,12 +19,12 @@ Usage:
         jurisdiction="France",
         legal_domain="employment law",
     )
-    result = agent.run("What is the case law on the Macron severance scale?")
 
 The reasoning (qualification protocol, temporal validity, case law
 hierarchy, graph traversal…) is the same regardless of jurisdiction. Set
 `jurisdiction` and/or `legal_domain` to ground answers in a given legal
-system, or supply a custom `prompt_yaml` for a specific preset (e.g.
+system (defaulted from the corpus if you pass one and don't set them
+explicitly), or supply a custom `prompt_yaml` for a specific preset (e.g.
 "base_legal_fr" for French law).
 """
 
@@ -30,6 +36,8 @@ from typing import Any, Optional
 import yaml
 from smolagents import ToolCallingAgent
 from smolagents.tools import Tool
+
+from ..corpus import LegalCorpus
 
 _PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -73,16 +81,23 @@ class LegalAgent(ToolCallingAgent):
 
     Parameters
     ----------
-    tools : list[Tool]
-        Concrete tools supplied by the consuming project
-        (e.g. QdrantJurisprudenceSearchTool, QdrantGraphTool…)
+    corpus : LegalCorpus | None
+        A corpus implementing get_law/search_law/get_jp/search_jp — its
+        four tools are built automatically and merged with `tools` (see
+        `legolagents.corpus.LegalCorpus`). This is the recommended way to
+        plug in a real data source.
+    tools : list[Tool] | None
+        Concrete tools supplied directly (used as-is, e.g. tools from an
+        MCP server, or extra tools alongside a corpus).
     model : smolagents.Model
         LLM model (OpenAIServerModel, LiteLLMModel, AnthropicModel…)
     jurisdiction : str
         Reference jurisdiction (e.g. "France", "Belgium", "Quebec").
-        Injected into the task to ground the reasoning.
+        Injected into the task to ground the reasoning. Defaults to
+        `corpus.jurisdiction` if a corpus is given and this is left empty.
     legal_domain : str
-        Main legal domain (e.g. "employment law", "civil law")
+        Main legal domain (e.g. "employment law", "civil law"). Defaults
+        to `corpus.name` if a corpus is given and this is left empty.
     extra_context : str
         Extra context injected into the system prompt
         (e.g. case brief context, client situation)
@@ -97,8 +112,9 @@ class LegalAgent(ToolCallingAgent):
 
     def __init__(
         self,
-        tools: list[Tool],
-        model: Any,
+        tools: Optional[list[Tool]] = None,
+        model: Any = None,
+        corpus: Optional[LegalCorpus] = None,
         jurisdiction: str = "",
         legal_domain: str = "",
         extra_context: str = "",
@@ -107,13 +123,22 @@ class LegalAgent(ToolCallingAgent):
         planning_interval: Optional[int] = 2,
         **kwargs: Any,
     ) -> None:
-        self.jurisdiction = jurisdiction
-        self.legal_domain = legal_domain
+        all_tools = list(corpus.as_tools()) if corpus else []
+        all_tools += tools or []
+        if not all_tools:
+            raise ValueError(
+                "LegalAgent needs at least one tool: pass corpus=... (see "
+                "legolagents.corpus.LegalCorpus) and/or tools=[...]."
+            )
+
+        self.corpus = corpus
+        self.jurisdiction = jurisdiction or (corpus.jurisdiction if corpus else "")
+        self.legal_domain = legal_domain or (corpus.name if corpus else "")
 
         prompt_templates = _build_prompt_templates(prompt_yaml, extra_context)
 
         super().__init__(
-            tools=tools,
+            tools=all_tools,
             model=model,
             prompt_templates=prompt_templates,
             max_steps=max_steps,

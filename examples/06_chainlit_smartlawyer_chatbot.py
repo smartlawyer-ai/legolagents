@@ -24,7 +24,7 @@ import os
 
 import chainlit as cl
 from legolagents import LegalResearchAgent
-from legolagents.mcp import SmartLawyerMCP
+from legolagents.mcp import SmartLawyerCorpus
 from smolagents import LiteLLMModel
 
 model = LiteLLMModel(model_id="anthropic/claude-sonnet-4-5")
@@ -32,13 +32,10 @@ model = LiteLLMModel(model_id="anthropic/claude-sonnet-4-5")
 
 @cl.on_chat_start
 async def start_chat():
-    mcp = SmartLawyerMCP(api_key=os.environ["SMARTLAWYER_API_KEY"])
-    tools = mcp.__enter__()  # kept open for the session, closed in on_chat_end
-    cl.user_session.set("mcp", mcp)
-    cl.user_session.set(
-        "agent",
-        LegalResearchAgent(tools=tools, model=model, jurisdiction="France"),
-    )
+    corpus = SmartLawyerCorpus(api_key=os.environ["SMARTLAWYER_API_KEY"])
+    corpus.__enter__()  # kept open for the session, closed in on_chat_end
+    cl.user_session.set("corpus", corpus)
+    cl.user_session.set("agent", LegalResearchAgent(corpus=corpus, model=model))
     await cl.Message(content="Ask me anything about French case law.").send()
 
 
@@ -51,9 +48,9 @@ async def handle_message(message: cl.Message):
 
 @cl.on_chat_end
 def end_chat():
-    mcp = cl.user_session.get("mcp")
-    if mcp:
-        mcp.__exit__(None, None, None)
+    corpus = cl.user_session.get("corpus")
+    if corpus:
+        corpus.__exit__(None, None, None)
 
 
 # That's it. Ask it something like:
