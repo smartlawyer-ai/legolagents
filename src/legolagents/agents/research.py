@@ -14,6 +14,7 @@ from typing import Any, Optional
 from smolagents.tools import Tool
 
 from .base import LegalAgent
+from ..corpus import LegalCorpus
 
 
 class LegalResearchAgent(LegalAgent):
@@ -34,14 +35,20 @@ class LegalResearchAgent(LegalAgent):
 
     Parameters
     ----------
-    tools : list[Tool]
-        Should include: JurisprudenceSearchTool, FindLandmarkCasesTool,
-        CheckDecisionValidityTool, GetLegalGraphTool, GetArticleTool.
+    corpus : LegalCorpus | None
+        A corpus implementing get_law/search_law/get_jp/search_jp — the
+        recommended way to plug in a real data source (see
+        `legolagents.corpus.LegalCorpus`).
+    tools : list[Tool] | None
+        Concrete tools supplied directly, merged with the corpus' tools
+        if both are given.
     model : smolagents.Model
     jurisdiction : str
         Reference jurisdiction (e.g. "France"), passed to LegalAgent.
+        Defaults from the corpus if not set.
     legal_domain : str
-        Legal domain (narrows the research if provided)
+        Legal domain (narrows the research if provided). Defaults from
+        the corpus name if not set.
     depth : str
         "shallow" (2-3 steps) | "standard" (default) | "deep" (exhaustive)
     """
@@ -54,8 +61,9 @@ class LegalResearchAgent(LegalAgent):
 
     def __init__(
         self,
-        tools: list[Tool],
-        model: Any,
+        tools: Optional[list[Tool]] = None,
+        model: Any = None,
+        corpus: Optional[LegalCorpus] = None,
         legal_domain: str = "",
         depth: str = "standard",
         extra_context: str = "",
@@ -66,6 +74,7 @@ class LegalResearchAgent(LegalAgent):
 
         super().__init__(
             tools=tools,
+            corpus=corpus,
             model=model,
             legal_domain=legal_domain,
             extra_context=extra_context,

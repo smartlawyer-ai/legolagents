@@ -14,7 +14,7 @@ the fiche dict structure and FicheAnalystAgent itself are jurisdiction-agnostic.
 
 import os
 from legolagents import FicheAnalystAgent
-from legolagents.mcp import SmartLawyerMCP
+from legolagents.mcp import SmartLawyerCorpus
 from smolagents import LiteLLMModel
 
 API_KEY = os.environ.get("SMARTLAWYER_API_KEY", "sk-sl-your-key")
@@ -49,11 +49,10 @@ fiche = {
 }
 
 
-with SmartLawyerMCP(api_key=API_KEY) as legal_tools:
+with SmartLawyerCorpus(api_key=API_KEY) as corpus:
     agent = FicheAnalystAgent(
-        tools        = legal_tools,
+        corpus       = corpus,
         model        = model,
-        jurisdiction = "France",
         fiche        = fiche,      # context injected automatically
         legal_domain = "employment law",
     )

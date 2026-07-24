@@ -14,15 +14,15 @@ Demonstrates the 4 differentiating use cases of the Legal Graph:
 
 import os
 from legolagents import LegalResearchAgent, FicheAnalystAgent
-from legolagents.mcp import SmartLawyerMCP
+from legolagents.mcp import SmartLawyerCorpus
 from smolagents import LiteLLMModel
 
 API_KEY = os.environ.get("SMARTLAWYER_API_KEY", "sk-sl-your-key")
 model   = LiteLLMModel(model_id="anthropic/claude-sonnet-4-5")
 
 
-with SmartLawyerMCP(api_key=API_KEY) as legal_tools:
-    agent = LegalResearchAgent(tools=legal_tools, model=model, jurisdiction="France", depth="deep")
+with SmartLawyerCorpus(api_key=API_KEY) as corpus:
+    agent = LegalResearchAgent(corpus=corpus, model=model, depth="deep")
 
     # ── Use case 1: "Can I cite this decision in my brief?" ──────────────────
 

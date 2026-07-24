@@ -3,7 +3,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/legolagents.svg)](https://pypi.org/project/legolagents/)
 [![Licence Apache 2.0](https://img.shields.io/badge/licence-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-66%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-106%20passed-brightgreen.svg)]()
 [![Basé sur smolagents](https://img.shields.io/badge/basé%20sur-smolagents-orange.svg)](https://github.com/huggingface/smolagents)
 
 [English version](README.md)
@@ -36,41 +36,55 @@ vérifie la validité de chaque décision, distingue les décisions de principe 
 ```python
 from legolagents import SourceType, Authority, LegalSource
 
-statute = LegalSource(ref="L1235-3", type=SourceType.STATUTE, authority=Authority.BINDING)
-case    = LegalSource(ref="21-14.027", type=SourceType.CASE_LAW, authority=Authority.PERSUASIVE)
+statute = LegalSource(ref="L1235-3", kind=SourceType.STATUTE, authority=Authority.BINDING)
+case    = LegalSource.from_payload(
+    {"number": "21-14.027", "cited_by_count": 42, "importance_score": 90},
+    kind=SourceType.CASE_LAW, authority=Authority.PERSUASIVE,
+)
 case.relates_to(statute, how="interprets")
+
+print(case.to_markdown())
+# **[case_law] 21-14.027** (💬 persuasive) ✅ Droit établi
+#   ↳ interprets L1235-3
 ```
 
-Tous les systèmes juridiques du monde combinent des sources codifiées (lois, règlements, traités) et de la jurisprudence — ce qui change réellement d'une juridiction à l'autre, c'est l'**autorité**, pas le **type**. Une décision de justice est `PERSUASIVE` en droit civil, `BINDING` en common law — même `SourceType.CASE_LAW` dans les deux cas. C'est ce vocabulaire que partagent la stratégie de raisonnement, les tools et les citations : on fixe le rang d'autorité une fois par juridiction, et le reste du framework s'adapte. Voir [`legolagents.ontology`](src/legolagents/ontology.py) pour le modèle complet (types de sources, niveaux d'autorité, et les types de relations — cite, interprète, applique, distingue, renverse, supersède, met en œuvre).
+Tous les systèmes juridiques du monde combinent des sources codifiées (lois, règlements, traités) et de la jurisprudence — ce qui change réellement d'une juridiction à l'autre, c'est l'**autorité**, pas le **type**. Une décision de justice est `PERSUASIVE` en droit civil, `BINDING` en common law — même `SourceType.CASE_LAW` dans les deux cas.
+
+En usage réel, on ne construit pas `LegalSource` un par un comme ici — une vraie intégration en a des milliers. `LegalSource.from_payload()` / `from_payloads()` mappent les enregistrements bruts de votre source de données en masse, et l'autorité/la certitude/les relations viennent des métadonnées de vos données elles-mêmes (contraignant ou persuasif, `cited_by_count`, `superseded_by`…), pas d'une étape séparée qu'on exécute après coup. Voir [`legolagents.ontology`](src/legolagents/ontology.py) pour le modèle complet (types de sources, niveaux d'autorité, et les types de relations — cite, interprète, applique, distingue, renverse, supersède, met en œuvre).
 
 ---
 
 ## Démarrage rapide (n'importe quelle juridiction)
 
-legolagents ne présuppose aucune base de données ni aucun droit — vous branchez vos propres outils :
+Un agent juridique travaille sur un **corpus** — un corps de droit (ex : "RGPD", "Code du travail français", "droit des sociétés du Delaware"). Branchez le vôtre en implémentant quatre méthodes — `get_law`, `search_law`, `get_jp`, `search_jp` — et les tools de l'agent sont construits pour vous, sans classe `Tool` à écrire :
 
 ```python
-from legolagents import LegalResearchAgent
-from legolagents.tools.retrieval import JurisprudenceSearchTool
+from legolagents import LegalResearchAgent, LegalCorpus, LegalSource, SourceType, Authority
 from smolagents import LiteLLMModel
 
-class MonOutilDeRecherche(JurisprudenceSearchTool):
-    def forward(self, query: str, domaine: str = "", limit: int = 5) -> str:
-        resultats = ma_base.rechercher(query)
-        return self.format_results(resultats)
+class MonCorpus(LegalCorpus):
+    name         = "RGPD"
+    jurisdiction = "UE"
+
+    def get_law(self, ref):
+        payload = ma_base.recuperer_article(ref)
+        return LegalSource.from_payload(payload, kind=SourceType.REGULATION, authority=Authority.BINDING)
+
+    def search_law(self, query, limit=5):
+        return LegalSource.from_payloads(ma_base.rechercher_articles(query, limit),
+                                          kind=SourceType.REGULATION, authority=Authority.BINDING)
+
+    def get_jp(self, ref): ...             # même principe, kind=SourceType.CASE_LAW
+    def search_jp(self, query, limit=5): ...
 
 model = LiteLLMModel(model_id="anthropic/claude-sonnet-4-5")
-agent = LegalResearchAgent(
-    tools=[MonOutilDeRecherche()],
-    model=model,
-    jurisdiction="France",   # ou "Belgique", "Québec"… ou vide (générique)
-)
-print(agent.run("Quelle est la jurisprudence sur la rupture abusive de promesse de vente ?"))
+agent = LegalResearchAgent(corpus=MonCorpus(), model=model)   # jurisdiction/legal_domain déduits du corpus
+print(agent.run("Quelles sont les obligations d'un sous-traitant au titre de l'article 28 du RGPD ?"))
 ```
 
-L'agent vérifie automatiquement la validité des décisions, remonte le graphe de citations, et répond avec un niveau de certitude : `✅ Droit établi`, `⚡ Tendance`, `⚠️ Isolé`, ou `❌ Superseded`.
+C'est toute la surface d'intégration. L'agent vérifie automatiquement la validité des décisions, remonte le graphe de citations, et répond avec un niveau de certitude : `✅ Droit établi`, `⚡ Tendance`, `⚠️ Isolé`, ou `❌ Superseded`.
 
-Pas encore de base jurisprudentielle ? Voir la section [Exemple : démarrer sur le marché français](#exemple--démarrer-sur-le-marché-français-smartlawyer-mcp) plus bas — un connecteur MCP prêt à l'emploi pour tester le framework sans rien construire.
+Pas encore de base jurisprudentielle ? Voir la section [Exemple : démarrer sur le marché français](#exemple--démarrer-sur-le-marché-français-smartlawyer-mcp) plus bas — un `LegalCorpus` prêt à l'emploi pour tester le framework sans rien construire.
 
 ---
 
@@ -146,18 +160,9 @@ agent.compare(
 
 ## Brancher votre propre base de données
 
-legolagents définit des interfaces — vous implémentez le `forward()` pour votre backend, dans n'importe quelle langue ou juridiction :
+`LegalCorpus` ne se préoccupe pas de ce qu'il y a derrière — Qdrant, Elasticsearch, une API REST, une base SQL, ou n'importe quel MCP juridique. Implémentez les quatre méthodes contre votre backend et retournez des `LegalSource` (construits en masse avec `from_payload`/`from_payloads`, voir ci-dessus).
 
-```python
-from legolagents.tools.retrieval import JurisprudenceSearchTool
-
-class MonOutil(JurisprudenceSearchTool):
-    def forward(self, query: str, domaine: str = "", limit: int = 5) -> str:
-        resultats = ma_base.rechercher(query)
-        return self.format_results(resultats)
-```
-
-Fonctionne avec Qdrant, Elasticsearch, une API REST, ou n'importe quel MCP juridique.
+Si vous préférez ne pas implémenter de corpus, `tools=[...]` accepte toujours n'importe quelle liste de `Tool` smolagents directement — `corpus=` et `tools=` peuvent aussi se combiner (par ex. un corpus pour la recherche plus des tools documentaires supplémentaires).
 
 ---
 
@@ -171,12 +176,14 @@ pip install 'legolagents[mcp]'
 
 ```python
 from legolagents import LegalResearchAgent
-from legolagents.mcp import SmartLawyerMCP
+from legolagents.mcp import SmartLawyerCorpus
 
-with SmartLawyerMCP(api_key="sk-sl-votre-cle") as outils:
-    agent = LegalResearchAgent(tools=outils, model=model, jurisdiction="France")
+with SmartLawyerCorpus(api_key="sk-sl-votre-cle") as corpus:   # jurisdiction="France" par défaut
+    agent = LegalResearchAgent(corpus=corpus, model=model)
     agent.run("L'arrêt 17-19.860 est-il toujours valide ?")
 ```
+
+`SmartLawyerCorpus` implémente `LegalCorpus` par-dessus les tools MCP de SmartLawyer, et expose aussi ses tools de graphe/détection de revirements (`find_revirements`, `superseded_chain`, `get_legal_graph`…) en plus des quatre standards. Préférez `SmartLawyerMCP` (liste brute de tools MCP, `tools=` au lieu de `corpus=`) si vous voulez les tools non mappés vers `LegalSource`.
 
 → [Obtenir une clé gratuite](https://smartlawyer.ai) · [Documentation MCP](https://smartlawyer.ai/mcp/)
 

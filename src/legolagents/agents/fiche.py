@@ -14,6 +14,7 @@ from typing import Any, Optional
 from smolagents.tools import Tool
 
 from .base import LegalAgent
+from ..corpus import LegalCorpus
 
 
 def _build_fiche_context(fiche: dict) -> str:
@@ -99,9 +100,14 @@ class FicheAnalystAgent(LegalAgent):
 
     Parameters
     ----------
-    tools : list[Tool]
-        Must include a tool that exposes the case brief context
-        (e.g. SmartLawyerFicheContextTool).
+    tools : list[Tool] | None
+        Tools giving the agent access to the surrounding case law (e.g.
+        via a corpus — see below). Optional: the agent can also work from
+        `fiche`/`fiche_context` alone with no tools.
+    corpus : LegalCorpus | None
+        A corpus (get_law/search_law/get_jp/search_jp) so the agent can
+        situate the case brief within the broader case law it's drawn
+        from (see `legolagents.corpus.LegalCorpus`).
     model : smolagents.Model
     fiche : dict | None
         Case brief data. If provided, the context is automatically
@@ -115,8 +121,9 @@ class FicheAnalystAgent(LegalAgent):
 
     def __init__(
         self,
-        tools: list[Tool],
-        model: Any,
+        tools: Optional[list[Tool]] = None,
+        model: Any = None,
+        corpus: Optional[LegalCorpus] = None,
         fiche: Optional[dict] = None,
         fiche_context: Optional[str] = None,
         legal_domain: str = "",
@@ -134,6 +141,7 @@ class FicheAnalystAgent(LegalAgent):
 
         super().__init__(
             tools=tools,
+            corpus=corpus,
             model=model,
             legal_domain=legal_domain,
             extra_context=extra,

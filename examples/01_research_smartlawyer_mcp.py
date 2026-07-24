@@ -21,7 +21,7 @@ generic setup).
 
 import os
 from legolagents import LegalResearchAgent
-from legolagents.mcp import SmartLawyerMCP
+from legolagents.mcp import SmartLawyerCorpus
 from smolagents import LiteLLMModel   # or OpenAIServerModel, AnthropicModel…
 
 API_KEY = os.environ.get("SMARTLAWYER_API_KEY", "sk-sl-your-key")
@@ -38,8 +38,8 @@ print("=" * 70)
 print("Example A — Validity of a decision")
 print("=" * 70)
 
-with SmartLawyerMCP(api_key=API_KEY) as legal_tools:
-    agent  = LegalResearchAgent(tools=legal_tools, model=model, jurisdiction="France", depth="standard")
+with SmartLawyerCorpus(api_key=API_KEY) as corpus:
+    agent  = LegalResearchAgent(corpus=corpus, model=model, depth="standard")
     result = agent.run(
         "Is decision 17-19.860 still valid? "
         "If it was overturned, which decision applies today?"
@@ -59,8 +59,8 @@ print("\n" + "=" * 70)
 print("Example B — Landmark decisions in employment law")
 print("=" * 70)
 
-with SmartLawyerMCP(api_key=API_KEY) as legal_tools:
-    agent  = LegalResearchAgent(tools=legal_tools, model=model, jurisdiction="France", depth="standard")
+with SmartLawyerCorpus(api_key=API_KEY) as corpus:
+    agent  = LegalResearchAgent(corpus=corpus, model=model, depth="standard")
     result = agent.run(
         "What are the 5 most important landmark decisions "
         "on termination for serious misconduct in French employment law?"
@@ -80,8 +80,8 @@ print("\n" + "=" * 70)
 print("Example C — Article L1235-3 and the Macron severance scale")
 print("=" * 70)
 
-with SmartLawyerMCP(api_key=API_KEY) as legal_tools:
-    agent  = LegalResearchAgent(tools=legal_tools, model=model, jurisdiction="France", depth="deep")
+with SmartLawyerCorpus(api_key=API_KEY) as corpus:
+    agent  = LegalResearchAgent(corpus=corpus, model=model, depth="deep")
     result = agent.run(
         "What does Article L1235-3 of the French Labor Code say? "
         "How is it applied by case law? "
@@ -105,8 +105,8 @@ print("\n" + "=" * 70)
 print("Example D — Procedural history of a case")
 print("=" * 70)
 
-with SmartLawyerMCP(api_key=API_KEY) as legal_tools:
-    agent  = LegalResearchAgent(tools=legal_tools, model=model, jurisdiction="France", depth="shallow")
+with SmartLawyerCorpus(api_key=API_KEY) as corpus:
+    agent  = LegalResearchAgent(corpus=corpus, model=model, depth="shallow")
     result = agent.run(
         "Retrace the full procedural history of case 20-13.844: "
         "from first instance up to the Cour de cassation."

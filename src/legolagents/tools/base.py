@@ -7,7 +7,10 @@ Adds on top of smolagents.Tool:
   - Domain attributes (jurisdiction, legal_domain)
   - Citation formatting helpers
   - run_async() — clean sync/async bridge
-  - Certainty level on results
+
+`Certainty` and `LegalSource` (the one data shape for legal sources,
+codified or case law) now live in `legolagents.ontology` — re-exported
+here for convenience since tools are where they're most often used.
 """
 
 from __future__ import annotations
@@ -15,65 +18,20 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, Coroutine
 
 from smolagents import Tool
 
+from ..ontology import Certainty, LegalSource
 
-class Certainty(str, Enum):
-    ESTABLISHED = "established"  # settled, published case law, non-superseded
-    TRENDING    = "trending"     # recent decisions, not yet settled
-    ISOLATED    = "isolated"     # single or minority decision
-    SUPERSEDED  = "superseded"   # no longer citable as positive law
-
-    def label(self) -> str:
-        return {
-            self.ESTABLISHED: "✅ Established law",
-            self.TRENDING:    "⚡ Trending",
-            self.ISOLATED:    "⚠️ Isolated",
-            self.SUPERSEDED:  "❌ Superseded",
-        }[self]
-
-
-@dataclass
-class LegalCitation:
-    """
-    Normalized representation of a case law citation.
-
-    Case-law-specific (chamber, importance_score…). For reasoning that
-    spans multiple kinds of sources — a statute, the cases interpreting
-    it, a treaty it implements — see the more general `LegalSource` in
-    `legolagents.ontology`.
-    """
-    number: str
-    date: str
-    jurisdiction: str
-    chamber: str
-    solution: str = ""
-    url: str = ""
-    importance_score: int = 0
-    cited_by_count: int = 0
-    certainty: Certainty = Certainty.ESTABLISHED
-
-    def to_markdown(self) -> str:
-        header = f"{self.jurisdiction} · {self.chamber} · {self.date} · n°{self.number}"
-        if self.url:
-            link = f"[{header}]({self.url})"
-        else:
-            link = f"**{header}**"
-        parts = [link]
-        if self.solution:
-            parts.append(f"— {self.solution}")
-        parts.append(self.certainty.label())
-        return " ".join(parts)
+__all__ = ["Certainty", "LegalSource", "LegalToolResult", "LegalTool"]
 
 
 @dataclass
 class LegalToolResult:
     """Structured result returned by a LegalTool."""
     content: str
-    citations: list[LegalCitation] = field(default_factory=list)
+    sources: list[LegalSource] = field(default_factory=list)
     certainty: Certainty = Certainty.ESTABLISHED
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -132,17 +90,13 @@ class LegalTool(Tool):
 
     @staticmethod
     def certainty_from_payload(payload: dict) -> Certainty:
-        """Infer the certainty level from a decision's metadata."""
-        if payload.get("superseded_by"):
-            return Certainty.SUPERSEDED
-        score = payload.get("importance_score") or 0
-        cited = payload.get("cited_by_count") or 0
-        publication = payload.get("publication") or []
-        if publication or score >= 70 or cited >= 20:
-            return Certainty.ESTABLISHED
-        if score >= 30 or cited >= 5:
-            return Certainty.TRENDING
-        return Certainty.ISOLATED
+        """Infer the certainty level from a decision's metadata.
+
+        Thin convenience wrapper around `Certainty.from_payload` — kept
+        here so existing `LegalTool` subclasses can call
+        `self.certainty_from_payload(...)` directly.
+        """
+        return Certainty.from_payload(payload)
 
     # ── Async bridge ───────────────────────────────────────────────────────────
 
