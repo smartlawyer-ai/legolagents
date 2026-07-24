@@ -1,12 +1,13 @@
 """Playbook : Analyse de Bail Commercial (statut L145-1 et s. C.com.)"""
 
-from ..base import Playbook, PlaybookLibrary, PlaybookPoint
+from ...base import Playbook, PlaybookLibrary, PlaybookPoint
 
 BAIL_COMMERCIAL = Playbook(
     id            = "bail_commercial",
     title         = "Analyse de Bail Commercial",
     document_type = "bail commercial",
     legal_domain  = "droit commercial",
+    jurisdiction  = "fr",
     output_format = "both",
     points=[
         PlaybookPoint(1,  "Parties",
