@@ -186,7 +186,11 @@ Envie d'une vraie interface de chat plutôt qu'un script ? [`examples/06_chainli
 
 ---
 
-## Playbooks disponibles (exemples droit français)
+## Playbooks disponibles (18, sur 5 juridictions)
+
+Les playbooks sont organisés par **juridiction, pas par langue** — le français est parlé en France, en Belgique, en Suisse, au Québec… chacun avec son propre droit ; les regrouper par système juridique (`playbooks/library/fr/`, `us/`, `uk/`, `de/`, `eu/`) garde le contenu de chaque playbook cohérent. Filtrez-les avec `PlaybookLibrary.list(jurisdiction="us")` / `PlaybookLibrary.jurisdictions()`.
+
+**France** (`fr`) — Code du travail / Code de commerce / Code civil :
 
 | Identifiant | Document | Points d'analyse |
 |---|---|---|
@@ -195,7 +199,41 @@ Envie d'une vraie interface de chat plutôt qu'un script ? [`examples/06_chainli
 | `pacte_associes` | Pacte d'associés | 15 |
 | `convention_credit` | Convention de crédit | 18 |
 
-Ces playbooks sont fournis prêts à l'emploi pour le marché français ; écrivez les vôtres avec `Playbook.quick(...)` (voir ci-dessus) pour toute autre juridiction ou type de document.
+**États-Unis** (`us`) — droit fédéral + variations Delaware/Californie/New York :
+
+| Identifiant | Document | Points d'analyse |
+|---|---|---|
+| `us_nda` | NDA (mutuel ou unilatéral) | 13 (DTSA, clauses de non-concurrence selon l'État) |
+| `us_employment_agreement` | Contrat de travail (at-will) | 12 (FLSA, non-concurrence selon l'État) |
+| `us_commercial_lease` | Bail commercial | 13 (droit locatif selon l'État) |
+| `us_saas_msa` | Contrat SaaS / MSA | 13 (UCC, lois de confidentialité des États, clauses IA) |
+
+**Royaume-Uni** (`uk`) — droit anglais (England & Wales) :
+
+| Identifiant | Document | Points d'analyse |
+|---|---|---|
+| `uk_nda` | NDA / accord de confidentialité | 12 (Coco v Clark, Trade Secrets Regs 2018) |
+| `uk_employment_contract` | Contrat de travail | 13 (Employment Rights Act 1996/2025) |
+| `uk_commercial_lease` | Bail commercial | 13 (Landlord and Tenant Act 1954 Part II) |
+| `uk_saas_msa` | Contrat SaaS / MSA | 13 (UCTA 1977, UK GDPR) |
+
+**Allemagne** (`de`) — Bundesrepublik Deutschland, contenu en allemand :
+
+| Identifiant | Document | Points d'analyse |
+|---|---|---|
+| `de_geheimhaltungsvereinbarung` | NDA | 12 (GeschGehG, § 307 BGB) |
+| `de_arbeitsvertrag` | Contrat de travail | 13 (§ 622 BGB, § 74 HGB, KSchG) |
+| `de_gewerbemietvertrag` | Bail commercial | 13 (§ 550 BGB Schriftform) |
+
+**UE** (`eu`) — contenu réglementaire supranational, transfrontalier :
+
+| Identifiant | Document | Points d'analyse |
+|---|---|---|
+| `eu_data_processing_agreement` | Convention de traitement de données | 13 (RGPD Art. 28) |
+| `eu_gdpr_compliance_review` | Revue de conformité RGPD | 14 (RGPD + interaction AI Act) |
+| `eu_distribution_agreement` | Accord de distribution / vertical | 13 (VBER 2022/720) |
+
+Ces playbooks sont fournis prêts à l'emploi ; écrivez les vôtres avec `Playbook.quick(...)` (voir ci-dessus) pour toute autre juridiction ou type de document. Les références légales reflètent le droit tel qu'il a été recherché au moment de la rédaction — vérifiez toujours leur statut actuel avant de vous y fier pour un cas réel.
 
 ---
 

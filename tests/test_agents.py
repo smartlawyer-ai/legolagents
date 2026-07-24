@@ -229,6 +229,84 @@ class TestPlaybooks:
         # Les conditions de signalement doivent apparaître
         assert "⚠️" in prompt or "Signaler si" in prompt
 
+
+class TestMultiJurisdictionPlaybooks:
+    """Playbooks are organized by jurisdiction (not language) — see ontology.py
+    for why jurisdiction is the framework's core axis."""
+
+    def test_jurisdictions_present(self):
+        from legolagents.playbooks import PlaybookLibrary
+        jurisdictions = PlaybookLibrary.jurisdictions()
+        for j in ("fr", "us", "uk", "de", "eu"):
+            assert j in jurisdictions
+
+    def test_list_filters_by_jurisdiction(self):
+        from legolagents.playbooks import PlaybookLibrary
+        fr_ids = PlaybookLibrary.list(jurisdiction="fr")
+        us_ids = PlaybookLibrary.list(jurisdiction="us")
+        assert set(fr_ids).isdisjoint(set(us_ids))
+        assert "bail_commercial" in fr_ids
+        assert "us_nda" in us_ids
+
+    def test_list_jurisdiction_case_insensitive(self):
+        from legolagents.playbooks import PlaybookLibrary
+        assert PlaybookLibrary.list(jurisdiction="US") == PlaybookLibrary.list(jurisdiction="us")
+
+    def test_all_filters_by_jurisdiction(self):
+        from legolagents.playbooks import PlaybookLibrary
+        de_playbooks = PlaybookLibrary.all(jurisdiction="de")
+        assert len(de_playbooks) == 3
+        assert all(p.jurisdiction == "de" for p in de_playbooks)
+
+    def test_us_playbooks_registered(self):
+        from legolagents.playbooks import PlaybookLibrary
+        ids = PlaybookLibrary.list(jurisdiction="us")
+        assert {"us_nda", "us_employment_agreement", "us_commercial_lease", "us_saas_msa"} <= set(ids)
+
+    def test_uk_playbooks_registered(self):
+        from legolagents.playbooks import PlaybookLibrary
+        ids = PlaybookLibrary.list(jurisdiction="uk")
+        assert {"uk_nda", "uk_employment_contract", "uk_commercial_lease", "uk_saas_msa"} <= set(ids)
+
+    def test_de_playbooks_registered(self):
+        from legolagents.playbooks import PlaybookLibrary
+        ids = PlaybookLibrary.list(jurisdiction="de")
+        assert {"de_geheimhaltungsvereinbarung", "de_arbeitsvertrag", "de_gewerbemietvertrag"} <= set(ids)
+
+    def test_eu_playbooks_registered(self):
+        from legolagents.playbooks import PlaybookLibrary
+        ids = PlaybookLibrary.list(jurisdiction="eu")
+        assert {"eu_data_processing_agreement", "eu_gdpr_compliance_review", "eu_distribution_agreement"} <= set(ids)
+
+    def test_us_nda_cites_dtsa(self):
+        from legolagents.playbooks import PlaybookLibrary
+        prompt = PlaybookLibrary.get("us_nda").to_prompt()
+        assert "1833" in prompt  # DTSA whistleblower notice section
+
+    def test_uk_employment_cites_era_1996(self):
+        from legolagents.playbooks import PlaybookLibrary
+        prompt = PlaybookLibrary.get("uk_employment_contract").to_prompt()
+        assert "ERA 1996" in prompt or "Employment Rights Act 1996" in prompt
+
+    def test_de_arbeitsvertrag_cites_karenzentschaedigung(self):
+        from legolagents.playbooks import PlaybookLibrary
+        prompt = PlaybookLibrary.get("de_arbeitsvertrag").to_prompt()
+        assert "Karenzentschädigung" in prompt
+
+    def test_eu_dpa_cites_article_28(self):
+        from legolagents.playbooks import PlaybookLibrary
+        prompt = PlaybookLibrary.get("eu_data_processing_agreement").to_prompt()
+        assert "28" in prompt
+
+    def test_total_playbook_count(self):
+        from legolagents.playbooks import PlaybookLibrary
+        # 4 fr (original) + 4 us + 4 uk + 3 de + 3 eu = 18 built-in playbooks
+        # (>= rather than == since other tests may register extra ad-hoc playbooks
+        # into the same process-wide registry)
+        assert len(PlaybookLibrary.list()) >= 18
+
+
+class TestPlaybookQuick:
     def test_quick_derives_id_from_title(self):
         from legolagents.playbooks.base import Playbook
         pb = Playbook.quick("NDA Review", points=["Parties — who are the parties?"])
