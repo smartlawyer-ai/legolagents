@@ -23,8 +23,12 @@ def _build_fiche_context(fiche: dict) -> str:
     """
     parts = ["## DECISION ANALYZED\n"]
 
-    def _add(label: str, key: str, max_len: int = 0) -> None:
-        val = fiche.get(key) or ""
+    def _add(label: str, *keys: str, max_len: int = 0) -> None:
+        val = ""
+        for key in keys:
+            val = fiche.get(key) or ""
+            if val:
+                break
         if not val:
             return
         val = str(val)
@@ -38,18 +42,19 @@ def _build_fiche_context(fiche: dict) -> str:
     _add("Number",       "number")
     _add("ECLI",         "ecli")
     _add("Holding",      "solution")
-    _add("Domain",       "domaine")
-    _add("Sub-domain",   "sous_domaine")
+    _add("Domain",       "domain", "domaine")
+    _add("Sub-domain",   "sub_domain", "sous_domaine")
     parts.append("")
 
-    for key, label in [
-        ("faits",         "### Facts"),
-        ("procedure",     "### Procedure"),
-        ("probleme",      "### Legal issue"),
-        ("solution_text", "### Holding"),
+    for keys, label in [
+        (("facts", "faits"),     "### Facts"),
+        (("procedure",),         "### Procedure"),
+        (("issue", "probleme"),  "### Legal issue"),
+        (("solution_text",),     "### Holding"),
     ]:
-        if fiche.get(key):
-            parts += [label, str(fiche[key])[:1500], ""]
+        val = next((fiche[k] for k in keys if fiche.get(k)), None)
+        if val:
+            parts += [label, str(val)[:1500], ""]
 
     # Referenced statutes
     articles = fiche.get("articles") or []
@@ -104,7 +109,8 @@ class FicheAnalystAgent(LegalAgent):
     fiche_context : str | None
         Pre-formatted context (alternative to fiche dict).
     legal_domain : str
-        Legal domain — if empty, inferred from fiche["domaine"].
+        Legal domain — if empty, inferred from fiche["domain"] (or the
+        French key "domaine", for backward compatibility with existing data).
     """
 
     def __init__(
@@ -120,7 +126,7 @@ class FicheAnalystAgent(LegalAgent):
         if fiche and not fiche_context:
             fiche_context = _build_fiche_context(fiche)
             if not legal_domain:
-                legal_domain = str(fiche.get("domaine") or "")
+                legal_domain = str(fiche.get("domain") or fiche.get("domaine") or "")
 
         extra = fiche_context or ""
         kwargs.setdefault("planning_interval", 2)

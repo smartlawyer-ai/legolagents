@@ -76,7 +76,7 @@ class GetArticleTool(LegalTool):
         url: str = "",
         version_date: str = "",
     ) -> str:
-        ref = self.fmt_article(code=code, numero=article, url=url)
+        ref = self.fmt_article(code=code, number=article, url=url)
         lines = [ref]
         if version_date:
             lines.append(f"*Version in force as of {self.fmt_date(version_date)}*")
@@ -126,10 +126,10 @@ class SearchArticlesTool(LegalTool):
         lines = [f"**{len(results)} article(s) found:**\n"]
         for r in results:
             code    = r.get("code", "")
-            numero  = r.get("numero", r.get("article", ""))
-            content = (r.get("text") or r.get("contenu") or "")[:300]
+            number  = r.get("number", r.get("numero", r.get("article", "")))
+            content = (r.get("text") or r.get("content") or r.get("contenu") or "")[:300]
             url     = r.get("url", "")
-            ref = self.fmt_article(code=code, numero=numero, url=url)
+            ref = self.fmt_article(code=code, number=number, url=url)
             lines.append(f"- {ref}")
             if content:
                 lines.append(f"  {content}…")

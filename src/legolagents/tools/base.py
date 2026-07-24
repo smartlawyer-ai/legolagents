@@ -114,9 +114,9 @@ class LegalTool(Tool):
         return f"{link} — {solution}" if solution else link
 
     @staticmethod
-    def fmt_article(*, code: str, numero: str, url: str = "") -> str:
+    def fmt_article(*, code: str, number: str, url: str = "") -> str:
         """Format a statute reference."""
-        ref = f"Art. {numero} {code}"
+        ref = f"Art. {number} {code}"
         return f"[{ref}]({url})" if url else f"**{ref}**"
 
     @staticmethod

@@ -29,7 +29,7 @@ Minimal agent usage:
 
     # Implement a concrete tool (or use the SmartLawyer tools, see README)
     class MySearchTool(JurisprudenceSearchTool):
-        def forward(self, query, domaine="", limit=5):
+        def forward(self, query, domain="", limit=5):
             ...
 
     model = OpenAIServerModel(model_id="gpt-4o", api_key="...")
