@@ -2,41 +2,49 @@
 legolagents — smolagents extension for building legal agents
 ═════════════════════════════════════════════════════════════
 
-Structured legal reasoning (qualification, temporal validity, case law
-hierarchy, citation graph traversal…), jurisdiction-agnostic by default —
-set `jurisdiction` / `legal_domain` to ground it in a given legal system.
+A legal agent works on a corpus — a body of law (e.g. "GDPR", "French
+Labor Code", "Delaware corporate law"). Plug yours in by implementing
+four methods (`LegalCorpus`), and the agent's tools are built for you:
 
-The core pattern: any jurisdiction's legal sources — codified or not — are
-described with a universal ontology (SourceType × Authority), not a
-France-shaped "code vs. jurisprudence" assumption:
+    from legolagents import LegalAgent, LegalCorpus, LegalSource, SourceType, Authority
 
-    from legolagents import SourceType, Authority, LegalSource
+    class MyCorpus(LegalCorpus):
+        name = "GDPR"
+        jurisdiction = "EU"
 
-    statute = LegalSource(ref="L1235-3", type=SourceType.STATUTE, authority=Authority.BINDING)
-    case    = LegalSource(ref="21-14.027", type=SourceType.CASE_LAW, authority=Authority.PERSUASIVE)
-    case.relates_to(statute, how="interprets")
+        def get_law(self, ref):
+            payload = my_db.fetch_article(ref)
+            return LegalSource.from_payload(payload, kind=SourceType.REGULATION, authority=Authority.BINDING)
 
-In a common law jurisdiction, the same case would simply carry
-`authority=Authority.BINDING` instead — nothing else changes. See
-`legolagents.ontology` for the full model (SourceType, Authority,
-RelationType).
+        def search_law(self, query, limit=5):
+            return LegalSource.from_payloads(my_db.search_articles(query, limit),
+                                              kind=SourceType.REGULATION, authority=Authority.BINDING)
 
-Minimal agent usage:
+        def get_jp(self, ref): ...      # same idea, kind=SourceType.CASE_LAW
+        def search_jp(self, query, limit=5): ...
 
-    from legolagents import LegalResearchAgent
-    from legolagents.tools.retrieval import JurisprudenceSearchTool
-    from smolagents import OpenAIServerModel
+    agent = LegalAgent(corpus=MyCorpus(), model=model)
+    result = agent.run("What are a processor's obligations under Art. 28 GDPR?")
 
-    # Implement a concrete tool (or use the SmartLawyer tools, see README)
-    class MySearchTool(JurisprudenceSearchTool):
-        def forward(self, query, domain="", limit=5):
-            ...
+That's the whole integration surface: `get_law`, `search_law`, `get_jp`,
+`search_jp`. Structured reasoning (qualification, temporal validity,
+source hierarchy, citation graph traversal…) is jurisdiction-agnostic by
+default — set `jurisdiction` / `legal_domain` (or let them default from
+the corpus) to ground it in a given legal system.
 
-    model = OpenAIServerModel(model_id="gpt-4o", api_key="...")
-    agent = LegalResearchAgent(
-        tools=[MySearchTool()], model=model, jurisdiction="France",
-    )
-    result = agent.run("What is the case law on the Macron severance scale?")
+Underneath, every source — codified or case law, any jurisdiction — is
+represented with one universal shape: `LegalSource`, described by
+`SourceType` (what kind of source) × `Authority` (how binding it is —
+the axis that actually differs between civil law and common law; see
+`legolagents.ontology`). You don't construct `LegalSource` by hand one at
+a time — `LegalCorpus` methods return it in bulk via
+`LegalSource.from_payload()` / `from_payloads()`, and authority/citation
+relations come from your data's own metadata (binding vs. persuasive,
+superseded_by, cited_by…), not a separate API you call after the fact.
+
+Playbooks (`legolagents.playbooks`) are a separate, optional layer: a
+structured workflow for a specific document type, composed on top of any
+agent + corpus — see `Playbook.quick(...)`.
 """
 
 from .agents.base     import LegalAgent
@@ -44,8 +52,9 @@ from .agents.research import LegalResearchAgent
 from .agents.fiche    import FicheAnalystAgent
 from .agents.document import LegalDocumentAgent
 
-from .ontology        import SourceType, Authority, RelationType, LegalRelation, LegalSource
-from .tools.base      import LegalTool, Certainty, LegalCitation, LegalToolResult
+from .ontology        import SourceType, Authority, Certainty, RelationType, LegalRelation, LegalSource
+from .corpus          import LegalCorpus
+from .tools.base      import LegalTool, LegalToolResult
 from .tools.document  import (
     ReadDocumentTool,
     GenerateDocxTool,
@@ -55,7 +64,7 @@ from .tools.document  import (
 )
 
 from .playbooks.base  import Playbook, PlaybookLibrary
-from .mcp             import SmartLawyerMCP, LegalMCPClient
+from .mcp             import SmartLawyerMCP, LegalMCPClient, SmartLawyerCorpus
 
 __version__ = "0.1.0"
 __author__  = "SmartLawyer AI"
@@ -67,16 +76,17 @@ __all__ = [
     "LegalResearchAgent",
     "FicheAnalystAgent",
     "LegalDocumentAgent",
+    # Corpus (the integration contract)
+    "LegalCorpus",
     # Ontology (universal legal source model)
     "SourceType",
     "Authority",
+    "Certainty",
     "RelationType",
     "LegalRelation",
     "LegalSource",
     # Tools base
     "LegalTool",
-    "Certainty",
-    "LegalCitation",
     "LegalToolResult",
     # Document tools (concrete, ready to use)
     "ReadDocumentTool",
@@ -87,7 +97,8 @@ __all__ = [
     # Playbooks
     "Playbook",
     "PlaybookLibrary",
-    # MCP
+    # MCP / SmartLawyer
     "SmartLawyerMCP",
+    "SmartLawyerCorpus",
     "LegalMCPClient",
 ]

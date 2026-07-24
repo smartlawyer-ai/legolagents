@@ -8,7 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from legolagents.tools.base import Certainty, LegalCitation, LegalTool
+from legolagents.tools.base import Certainty, LegalSource, LegalTool
+from legolagents.ontology import SourceType, Authority
 from legolagents.tools.articles import normalize_code_name
 from legolagents.tools.document import (
     EditInput,
@@ -47,12 +48,14 @@ class TestCertainty:
         assert LegalTool.certainty_from_payload(payload) == Certainty.ISOLATED
 
 
-# ── LegalCitation ─────────────────────────────────────────────────────────────
+# ── LegalSource ───────────────────────────────────────────────────────────────
 
-class TestLegalCitation:
+class TestLegalSource:
     def test_markdown_with_url(self):
-        c = LegalCitation(
-            number="21-12345",
+        c = LegalSource(
+            ref="21-12345",
+            kind=SourceType.CASE_LAW,
+            authority=Authority.PERSUASIVE,
             date="2022-03-15",
             jurisdiction="Cour de cassation",
             chamber="Chambre sociale",
@@ -60,19 +63,50 @@ class TestLegalCitation:
             url="https://smartlawyer.ai/jurisprudence/soc-2022-03-15",
         )
         md = c.to_markdown()
-        assert "[Cour de cassation · Chambre sociale" in md
         assert "21-12345" in md
+        assert "Chambre sociale" in md
         assert "Cassation" in md
         assert "https://smartlawyer.ai" in md
+        assert "persuasive" in md
 
     def test_markdown_without_url(self):
-        c = LegalCitation(
-            number="20-99999", date="2021-01-01",
-            jurisdiction="CA Paris", chamber="Pôle 5",
+        c = LegalSource(
+            ref="20-99999", kind=SourceType.CASE_LAW, authority=Authority.BINDING,
+            date="2021-01-01", jurisdiction="CA Paris", chamber="Pôle 5",
         )
         md = c.to_markdown()
-        assert "**CA Paris" in md
-        assert "[" not in md.split("—")[0]   # pas de lien Markdown
+        assert "**[case_law] 20-99999" in md
+        assert "binding" in md
+
+    def test_from_payload_maps_common_fields(self):
+        payload = {
+            "number": "21-14.027",
+            "decision_date": "2022-09-11T00:00:00Z",
+            "chamber": "soc",
+            "solution": "Dismissed",
+            "importance_score": 92,
+            "cited_by_count": 87,
+        }
+        source = LegalSource.from_payload(payload, kind=SourceType.CASE_LAW, authority=Authority.PERSUASIVE)
+        assert source.ref == "21-14.027"
+        assert source.chamber == "soc"
+        assert source.certainty == Certainty.ESTABLISHED
+
+    def test_from_payload_registers_superseded_relation(self):
+        payload = {"number": "17-19.860", "superseded_by": {"number": "22-11111"}}
+        source = LegalSource.from_payload(payload, kind=SourceType.CASE_LAW, authority=Authority.PERSUASIVE)
+        assert any(r.target_ref == "22-11111" for r in source.relations)
+        assert source.certainty == Certainty.SUPERSEDED
+
+    def test_from_payloads_bulk(self):
+        payloads = [{"number": "1"}, {"number": "2"}, {"number": "3"}]
+        sources = LegalSource.from_payloads(payloads, kind=SourceType.STATUTE, authority=Authority.BINDING)
+        assert [s.ref for s in sources] == ["1", "2", "3"]
+
+    def test_relates_to_accepts_plain_ref_string(self):
+        case = LegalSource(ref="21-14.027", kind=SourceType.CASE_LAW, authority=Authority.PERSUASIVE)
+        case.relates_to("L1235-3", how="interprets")
+        assert case.relations[0].target_ref == "L1235-3"
 
 
 # ── LegalTool helpers ─────────────────────────────────────────────────────────

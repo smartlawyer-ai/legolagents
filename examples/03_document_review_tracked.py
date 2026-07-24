@@ -16,7 +16,7 @@ document tools themselves are jurisdiction-agnostic.
 import os
 from pathlib import Path
 from legolagents import LegalDocumentAgent
-from legolagents.mcp import SmartLawyerMCP
+from legolagents.mcp import SmartLawyerCorpus
 from legolagents.tools.document import GenerateDocxTool, TrackedChangesTool
 from smolagents import LiteLLMModel
 
@@ -89,12 +89,10 @@ print("=" * 70)
 API_KEY = os.environ.get("SMARTLAWYER_API_KEY", "")
 
 if API_KEY:
-    with SmartLawyerMCP(api_key=API_KEY) as legal_tools:
-        from legolagents.agents.document import _default_document_tools
+    with SmartLawyerCorpus(api_key=API_KEY) as corpus:
         agent_review = LegalDocumentAgent(
-            tools        = _default_document_tools() + list(legal_tools),
+            corpus       = corpus,   # adds case-law research on top of the default document tools
             model        = model,
-            jurisdiction = "France",
             legal_domain = "employment law",
         )
         review_result = agent_review.review(
