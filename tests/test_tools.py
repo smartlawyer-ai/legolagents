@@ -106,11 +106,11 @@ class TestLegalToolHelpers:
         assert "[" not in result
 
     def test_fmt_article_with_url(self):
-        result = self.tool.fmt_article(code="Code du travail", numero="L1235-3", url="https://x.fr")
+        result = self.tool.fmt_article(code="Code du travail", number="L1235-3", url="https://x.fr")
         assert "[Art. L1235-3" in result
 
     def test_fmt_article_without_url(self):
-        result = self.tool.fmt_article(code="Code civil", numero="1240")
+        result = self.tool.fmt_article(code="Code civil", number="1240")
         assert "**Art. 1240" in result
 
     def test_fmt_date(self):

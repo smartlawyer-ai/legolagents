@@ -49,10 +49,10 @@ with SmartLawyerMCP(api_key=API_KEY) as legal_tools:
         "Trace the lineage from the founding decision to current decisions. "
         "Have there been reversals on this principle?"
     ))
-    # → find_arrets_de_principe(domaine="employment law")
+    # → find_arrets_de_principe(domain="employment law")
     # → get_legal_graph(founding decision)
     # → find_related_by_graph (depth=2)
-    # → find_revirements(domaine="employment law", sujet="duty of safety")
+    # → find_revirements(domain="employment law", subject="duty of safety")
     # Expected result: timeline from 2002 case law → evolution toward a duty of means
 
 
@@ -66,7 +66,7 @@ with SmartLawyerMCP(api_key=API_KEY) as legal_tools:
         "since 2020? Are there major doctrinal shifts "
         "I need to know about to litigate in 2025?"
     ))
-    # → find_revirements(domaine="employment law", date_from="2020-01-01")
+    # → find_revirements(domain="employment law", date_from="2020-01-01")
     # Expected result: list of reversals with overturned decision → replacing decision
 
 

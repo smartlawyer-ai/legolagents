@@ -60,9 +60,9 @@ class TestFicheContext:
             "decision_date":  "2022-03-15",
             "number":         "21-12345",
             "solution":       "Cassation",
-            "domaine":        "droit social",
-            "faits":          "Un salarié a été licencié pour faute grave.",
-            "probleme":       "Le barème Macron est-il opposable ?",
+            "domain":         "employment law",
+            "facts":          "An employee was terminated for serious misconduct.",
+            "issue":          "Is the Macron severance scale enforceable?",
             "importance_score": 85,
             "cited_by_count": 42,
         }
@@ -71,16 +71,29 @@ class TestFicheContext:
         ctx = _build_fiche_context(self.fiche)
         assert "21-12345" in ctx
         assert "Cassation" in ctx
-        assert "droit social" in ctx
+        assert "employment law" in ctx
 
-    def test_context_contains_faits(self):
+    def test_context_contains_facts(self):
         ctx = _build_fiche_context(self.fiche)
-        assert "licencié" in ctx
+        assert "terminated" in ctx
 
     def test_context_superseded_warning(self):
         fiche = dict(self.fiche, superseded_by={"number": "22-99999"})
         ctx = _build_fiche_context(fiche)
         assert "superseded" in ctx.lower() or "renversé" in ctx.lower() or "22-99999" in ctx
+
+    def test_context_french_keys_backward_compat(self):
+        """Old French field names (domaine, faits, probleme) still work."""
+        fiche_fr = {
+            "number":   "21-12345",
+            "domaine":  "droit social",
+            "faits":    "Un salarié a été licencié pour faute grave.",
+            "probleme": "Le barème Macron est-il opposable ?",
+        }
+        ctx = _build_fiche_context(fiche_fr)
+        assert "droit social" in ctx
+        assert "licencié" in ctx
+        assert "barème Macron" in ctx
 
     def test_context_valid_decision(self):
         ctx = _build_fiche_context(self.fiche)
@@ -137,7 +150,7 @@ class TestAgentConstruction:
     def test_fiche_context_injected(self):
         """Vérifie que le contexte fiche est injecté dans le system prompt."""
         fiche = {
-            "number": "TEST-99999", "domaine": "droit civil",
+            "number": "TEST-99999", "domain": "civil law",
             "decision_date": "2023-01-01", "solution": "Rejet",
         }
         # _build_fiche_context doit produire un contexte avec le numéro

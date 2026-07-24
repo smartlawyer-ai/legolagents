@@ -119,11 +119,11 @@ class FindRevirementsTool(LegalTool):
         "Critical to assess the stability of the applicable law."
     )
     inputs = {
-        "domaine": {
+        "domain": {
             "type": "string",
             "description": "Legal domain to analyze",
         },
-        "sujet": {
+        "subject": {
             "type": "string",
             "description": "Specific topic (optional, e.g. 'severance pay scale')",
             "nullable": True,
@@ -137,7 +137,7 @@ class FindRevirementsTool(LegalTool):
     output_type = "string"
 
     @abstractmethod
-    def forward(self, domaine: str, sujet: str = "", limit: int = 5) -> str:
+    def forward(self, domain: str, subject: str = "", limit: int = 5) -> str:
         raise NotImplementedError
 
 
