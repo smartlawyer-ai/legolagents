@@ -12,7 +12,7 @@
 
 ---
 
-**legolagents** donne à vos smolagents le protocole de raisonnement d'un juriste, agnostique de juridiction par défaut : les agents vérifient si une décision est toujours valide avant de la citer, remontent la lignée jurisprudentielle, détectent les revirements, et révisent les contrats avec le suivi des modifications Word natif. Précisez une juridiction (`jurisdiction="France"`, `"Belgique"`…) pour l'ancrer dans un droit donné — ou laissez l'agent générique si vous branchez votre propre base multi-juridictions.
+**legolagents** transforme n'importe quel corpus juridique — jurisprudence, textes de loi, votre propre base — en agent qui raisonne comme un juriste : il vérifie si une décision est toujours valide avant de la citer, remonte la lignée jurisprudentielle, détecte les revirements, et révise les contrats avec le suivi des modifications Word natif. Agnostique de juridiction par défaut — précisez `jurisdiction="France"` (`"Belgique"`…) pour l'ancrer dans un droit donné, ou laissez-le générique pour brancher votre propre corpus multi-juridictions.
 
 ```bash
 pip install legolagents
