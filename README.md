@@ -12,9 +12,7 @@
 
 ---
 
-**legolagents** extends [smolagents](https://github.com/huggingface/smolagents) with structured legal reasoning — jurisdiction-agnostic by default.
-
-You already have smolagents. Add legolagents and your agents apply a jurist's protocol, whatever the applicable law: they check whether a decision is still valid before citing it, walk the citation lineage, detect overturned rulings, and revise your contracts with native Word tracked changes. Set a jurisdiction (`jurisdiction="France"`, `"Belgium"`…) to ground it in a given legal system — or leave it generic if you're plugging in your own multi-jurisdiction database.
+**legolagents** gives your smolagents a jurist's reasoning protocol, jurisdiction-agnostic by default: agents check whether a decision is still valid before citing it, walk the citation lineage, detect reversals, and revise contracts with native Word tracked changes. Set a jurisdiction (`jurisdiction="France"`, `"Belgium"`…) to ground it in a given legal system — or leave it generic if you're plugging in your own multi-jurisdiction database.
 
 ```bash
 pip install legolagents

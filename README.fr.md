@@ -12,9 +12,7 @@
 
 ---
 
-**legolagents** étend [smolagents](https://github.com/huggingface/smolagents) avec un raisonnement juridique structuré — agnostique de juridiction par défaut.
-
-Vous avez déjà smolagents. Ajoutez legolagents et vos agents appliquent le protocole d'un juriste, quel que soit le droit applicable : ils vérifient si une décision est toujours valide avant de la citer, remontent la lignée jurisprudentielle, détectent les revirements, et révisent vos contrats avec le suivi des modifications Word natif. Précisez une juridiction (`jurisdiction="France"`, `"Belgique"`…) pour l'ancrer dans un droit donné — ou laissez l'agent générique si vous branchez votre propre base multi-juridictions.
+**legolagents** donne à vos smolagents le protocole de raisonnement d'un juriste, agnostique de juridiction par défaut : les agents vérifient si une décision est toujours valide avant de la citer, remontent la lignée jurisprudentielle, détectent les revirements, et révisent les contrats avec le suivi des modifications Word natif. Précisez une juridiction (`jurisdiction="France"`, `"Belgique"`…) pour l'ancrer dans un droit donné — ou laissez l'agent générique si vous branchez votre propre base multi-juridictions.
 
 ```bash
 pip install legolagents
