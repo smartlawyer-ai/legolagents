@@ -12,7 +12,7 @@
 
 ---
 
-**legolagents** gives your smolagents a jurist's reasoning protocol, jurisdiction-agnostic by default: agents check whether a decision is still valid before citing it, walk the citation lineage, detect reversals, and revise contracts with native Word tracked changes. Set a jurisdiction (`jurisdiction="France"`, `"Belgium"`…) to ground it in a given legal system — or leave it generic if you're plugging in your own multi-jurisdiction database.
+**legolagents** turns any legal corpus — case law, statutes, your own database — into an agent that reasons like a jurist: it checks whether a decision is still valid before citing it, walks the citation lineage, detects reversals, and revises contracts with native Word tracked changes. Jurisdiction-agnostic by default — set `jurisdiction="France"` (`"Belgium"`…) to ground it in a given legal system, or leave it generic and plug in your own multi-jurisdiction corpus.
 
 ```bash
 pip install legolagents
